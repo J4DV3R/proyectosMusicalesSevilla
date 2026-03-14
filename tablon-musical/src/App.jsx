@@ -18,7 +18,7 @@ function App() {
       // Usamos iste query que trae los más nuevos primero
       const { data, error } = await supabase
         .from('notices')
-        .select('*')
+        .select('id, title, description, tag, location, price, contact_type, contact_value, image_url, images, created_at')
         .order('created_at', { ascending: false });
         
       if (!error && data) {

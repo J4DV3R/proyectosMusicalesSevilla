@@ -27,6 +27,9 @@ dist-ssr
 *.db
 *.db-journal
 .supabase/
+
+# Scripts SQL con estructura de la BD (no exponer en repo público)
+*.sql
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
