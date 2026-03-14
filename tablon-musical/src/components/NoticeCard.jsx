@@ -109,11 +109,11 @@ export default function NoticeCard({ notice }) {
 
     {/* MODAL EXPANDIDO */}
     {isExpanded && (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(8px)' }} onClick={() => setIsExpanded(false)}>
+      <div className="modal-container" style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(8px)' }} onClick={() => setIsExpanded(false)}>
         
         {/* Evitamos que el clic dentro del modal lo cierre */}
         <div 
-          className="glass-panel" 
+          className="glass-panel modal-content" 
           onClick={(e) => e.stopPropagation()} 
           style={{ width: '100%', maxWidth: '700px', borderRadius: 'var(--border-radius-md)', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', position: 'relative', animation: 'fadeIn 0.2s ease' }}
         >

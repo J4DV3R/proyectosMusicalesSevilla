@@ -108,8 +108,8 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
 
   if (successToken) {
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(4px)' }}>
-        <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', borderRadius: 'var(--border-radius-md)', padding: '2.5rem', textAlign: 'center', animation: 'fadeIn 0.3s ease' }}>
+      <div className="modal-container" style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(4px)' }}>
+        <div className="glass-panel modal-content" style={{ width: '100%', maxWidth: '500px', borderRadius: 'var(--border-radius-md)', padding: '2.5rem', textAlign: 'center', animation: 'fadeIn 0.3s ease' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🤘</div>
           <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--neon-green)' }}>¡ANUNCIO PUBLICADO!</h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
@@ -138,9 +138,9 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}>
+    <div className="modal-container" style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}>
       
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '600px', borderRadius: 'var(--border-radius-md)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.3s ease' }}>
+      <div className="glass-panel modal-content" style={{ width: '100%', maxWidth: '600px', borderRadius: 'var(--border-radius-md)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.3s ease' }}>
         
         {/* Header */}
         <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -163,7 +163,7 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
             <textarea required rows="4" name="description" value={formData.description} onChange={handleChange} className="input-base" placeholder="Detalles de tu anuncio..." style={{ resize: 'vertical' }}></textarea>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Categoría *</label>
               <select name="tag" value={formData.tag} onChange={handleChange} className="input-base">
@@ -185,7 +185,7 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, auto) 1fr', gap: '1rem' }}>
+          <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, auto) 1fr', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Contacto *</label>
               <select name="contact_type" value={formData.contact_type} onChange={handleChange} className="input-base">

@@ -192,3 +192,64 @@ a:hover {
   margin: 0 auto;
   width: 100%;
 }
+
+/* ==========================================================================
+   RESPONSIVE DESIGN (Mobile First Adjustments)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 1rem;
+  }
+
+  /* Ajustar Cabecera Principal */
+  header.glass-panel {
+    padding: 1rem !important;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center !important;
+    position: relative !important; /* Quitar sticky en móvil para dar más espacio real */
+  }
+
+  header.glass-panel h1 {
+    font-size: 1.1rem !important;
+    text-align: center;
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Reducir títulos hero */
+  .main-content h2 {
+    font-size: 2rem !important;
+  }
+  
+  .main-content p {
+    font-size: 0.95rem !important;
+    line-height: 1.4;
+  }
+
+  /* Ajustar paneles y tarjetas */
+  .glass-panel {
+    padding: 1.25rem !important;
+  }
+
+  /* Ajustes en Modales */
+  .modal-container {
+    padding: 0.5rem !important;
+  }
+  
+  .modal-content {
+    padding: 1.25rem !important;
+  }
+  
+  /* Pasar grids de 2 columnas a 1 columna en móvil (formularios) */
+  .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Botones algo más compactos */
+  .btn {
+    padding: 8px 14px;
+    font-size: 0.75rem;
+  }
+}
+

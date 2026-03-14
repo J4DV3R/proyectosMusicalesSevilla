@@ -205,7 +205,7 @@ export default function EditNotice() {
               <textarea required rows="6" name="description" value={formData.description} onChange={handleChange} className="input-base" style={{ resize: 'vertical' }}></textarea>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-secondary)' }}>CATEGORÍA</label>
                 <select name="tag" value={formData.tag} onChange={handleChange} className="input-base">
@@ -227,7 +227,7 @@ export default function EditNotice() {
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, auto) 1fr', gap: '1rem' }}>
+            <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, auto) 1fr', gap: '1rem' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-secondary)' }}>CONTACTO TIPO</label>
                 <select name="contact_type" value={formData.contact_type} onChange={handleChange} className="input-base">
