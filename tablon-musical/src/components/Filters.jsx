@@ -24,8 +24,14 @@ export default function Filters({ activeFilter, setActiveFilter }) {
         Todos
       </button>
 
-      {/* Botones Dinámicos desde BBDD */}
-      {categories.map(c => (
+      {/* Botones Dinámicos desde BBDD: alfabéticos, con "Otros" siempre al final */}
+      {[...categories]
+        .sort((a, b) => {
+          if (a.name === 'Otros') return 1;
+          if (b.name === 'Otros') return -1;
+          return a.name.localeCompare(b.name, 'es');
+        })
+        .map(c => (
         <button
           key={c.id}
           onClick={() => setActiveFilter(c.name)}
