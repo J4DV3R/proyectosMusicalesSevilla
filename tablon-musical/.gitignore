@@ -16,6 +16,17 @@ dist-ssr
 .env
 .env.*
 .env.local
+*.pem
+*.key
+*.cert
+*.p12
+
+# Bases de datos y archivos locales autogenerados
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+.supabase/
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
