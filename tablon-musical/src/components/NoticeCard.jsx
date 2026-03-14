@@ -51,7 +51,7 @@ export default function NoticeCard({ notice }) {
       <div 
         className="glass-panel" 
         onClick={() => setIsExpanded(true)}
-        style={{ borderRadius: 'var(--border-radius-md)', padding: '1.5rem', transition: 'transform var(--transition-fast)', display: 'flex', flexDirection: 'column', height: '100%', cursor: 'pointer' }}
+        style={{ position: 'relative', borderRadius: 'var(--border-radius-md)', padding: '1.5rem', transition: 'transform var(--transition-fast)', display: 'flex', flexDirection: 'column', height: '100%', cursor: 'pointer' }}
       >
         {/* Indicador visual de clic */}
         <div style={{ position: 'absolute', top: '10px', right: '10px', opacity: 0.5, pointerEvents: 'none' }}>
