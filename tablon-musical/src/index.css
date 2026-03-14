@@ -1,0 +1,194 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Underground/Cyberpunk Dark Theme Color Palette */
+  --bg-color: #050505;
+  --surface-color: #111111;
+  --surface-hover: #1a1a1a;
+  --border-color: #333333;
+  
+  --text-primary: #f0f0f0;
+  --text-secondary: #888888;
+  
+  /* Neon Accents */
+  --neon-green: #39ff14;
+  --neon-purple: #b026ff;
+  --neon-pink: #ff2a6d;
+  --neon-blue: #05d9e8;
+  
+  --accent-color: var(--neon-purple);
+  --accent-hover: #c45eff;
+  --accent-subtle: rgba(176, 38, 255, 0.15);
+
+  /* Tags/Categories Colors */
+  --tag-buy-sell: var(--neon-green);
+  --tag-buy-sell-bg: rgba(57, 255, 20, 0.1);
+  --tag-concert: var(--neon-blue);
+  --tag-concert-bg: rgba(5, 217, 232, 0.1);
+  --tag-other: var(--neon-pink);
+  --tag-other-bg: rgba(255, 42, 109, 0.1);
+  
+  /* Utilities */
+  --border-radius-sm: 2px; /* Sharper edges */
+  --border-radius-md: 4px;
+  --border-radius-lg: 8px;
+  
+  --shadow-glow-purple: 0 0 15px rgba(176, 38, 255, 0.4);
+  --shadow-glow-green: 0 0 15px rgba(57, 255, 20, 0.4);
+  
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-color);
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(176, 38, 255, 0.08), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(5, 217, 232, 0.08), transparent 25%);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Gritty container style */
+.glass-panel {
+  background: rgba(17, 17, 17, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  box-shadow: 4px 4px 0px rgba(0,0,0,1); /* Brutalist shadow */
+}
+
+/* Typography base */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: var(--accent-color);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+a:hover {
+  color: var(--text-primary);
+  text-shadow: 0 0 8px var(--accent-color);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-color);
+  border-left: 1px solid var(--border-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+}
+
+/* Base button styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background-color: var(--accent-color);
+  color: #000;
+  border: 1px solid var(--accent-color);
+}
+
+.btn-primary:hover {
+  background-color: transparent;
+  color: var(--accent-color);
+  box-shadow: var(--shadow-glow-purple);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+  border-color: var(--text-primary);
+  background-color: rgba(255,255,255,0.05);
+}
+
+/* Inputs */
+.input-base {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--border-radius-sm);
+  background-color: rgba(0,0,0,0.5);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: all var(--transition-fast);
+}
+
+.input-base:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: inset 4px 0 0 var(--accent-color);
+}
+
+.input-base::placeholder {
+  color: var(--border-color);
+}
+
+/* Custom Selection */
+::selection {
+  background: var(--accent-color);
+  color: #000;
+}
+
+/* App Layout */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
