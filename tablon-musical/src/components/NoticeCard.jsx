@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { Mail, Phone, Instagram } from 'lucide-react';
-
-const tagConfig = {
-  'Compra/Venta': { color: 'var(--tag-buy-sell)', bg: 'var(--tag-buy-sell-bg)' },
-  'Conciertos': { color: 'var(--tag-concert)', bg: 'var(--tag-concert-bg)' },
-  'Otros': { color: 'var(--tag-other)', bg: 'var(--tag-other-bg)' }
-};
+import { useCategories } from '../context/CategoryContext';
 
 export default function NoticeCard({ notice }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { title, description, tag, image_url, images, contact_type, contact_value, created_at, location, price } = notice;
-  const config = tagConfig[tag] || tagConfig['Otros'];
+  
+  const { categories } = useCategories();
+  
+  // Buscar en la BD; si se eliminó, dar un fallback
+  const catObj = categories.find(c => c.name === tag);
+  const config = catObj ? { color: catObj.color, bg: catObj.bg_color } : { color: 'var(--neon-pink)', bg: 'rgba(255, 42, 109, 0.1)' };
   
   
   // Compatibilidad: usar nuevo array images, si no existe o es nulo, usar image_url antigua

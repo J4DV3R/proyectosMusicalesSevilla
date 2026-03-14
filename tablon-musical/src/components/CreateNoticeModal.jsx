@@ -1,21 +1,31 @@
 import React, { useState } from 'react';
 import { X, Upload, Image as ImageIcon, Copy, Check } from 'lucide-react';
+import { useCategories } from '../context/CategoryContext';
 
 export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    tag: 'Compra/Venta',
+    tag: '', // Se asignará la primera categoría disponible por defecto luego
     location: '',
     price: '',
     contact_type: 'email',
     contact_value: ''
   });
+  
+  const { categories } = useCategories();
   const [files, setFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successToken, setSuccessToken] = useState(null);
   const [copied, setCopied] = useState(false);
+
+  // Asegurar que si abre y no tiene tag y hay categorias cargadas se asigne la primera
+  React.useEffect(() => {
+    if (isOpen && categories.length > 0 && !formData.tag) {
+      setFormData(prev => ({ ...prev, tag: categories[0].name }));
+    }
+  }, [isOpen, categories, formData.tag]);
 
   if (!isOpen) return null;
 
@@ -91,7 +101,7 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
 
   const closeAndReset = () => {
     setFormData({
-      title: '', description: '', tag: 'Compra/Venta', location: '', price: '', contact_type: 'email', contact_value: ''
+      title: '', description: '', tag: categories.length > 0 ? categories[0].name : '', location: '', price: '', contact_type: 'email', contact_value: ''
     });
     setFiles([]);
     setPreviews([]);
@@ -167,9 +177,9 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
             <div>
               <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Categoría *</label>
               <select name="tag" value={formData.tag} onChange={handleChange} className="input-base">
-                <option value="Compra/Venta">Compra/Venta</option>
-                <option value="Conciertos">Conciertos</option>
-                <option value="Otros">Otros</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.name}>{c.name}</option>
+                ))}
               </select>
             </div>
             <div>

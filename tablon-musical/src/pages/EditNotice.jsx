@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase, uploadImage } from '../lib/supabase';
-import { X, Upload, Image as ImageIcon } from 'lucide-react';
+import { Trash2, AlertTriangle, ArrowLeft, Upload, Image as ImageIcon, X, Save } from 'lucide-react';
+import { useCategories } from '../context/CategoryContext';
 
 export default function EditNotice() {
   const { token } = useParams();
@@ -17,6 +18,8 @@ export default function EditNotice() {
   
   // States for the form
   const [formData, setFormData] = useState({});
+
+  const { categories } = useCategories();
   
   useEffect(() => {
     async function fetchNotice() {
@@ -209,9 +212,9 @@ export default function EditNotice() {
               <div>
                 <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-secondary)' }}>CATEGORÍA</label>
                 <select name="tag" value={formData.tag} onChange={handleChange} className="input-base">
-                  <option value="Compra/Venta">Compra/Venta</option>
-                  <option value="Conciertos">Conciertos</option>
-                  <option value="Otros">Otros</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.name}>{c.name}</option>
+                  ))}
                 </select>
               </div>
               <div>
