@@ -65,20 +65,20 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
       }
     }
 
-    // 2. Contacto
-    if (formData.contact_type === 'email') {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact_value)) {
-        return alert("Por favor, introduce un correo electrónico válido.");
-      }
-    } else if (formData.contact_type === 'phone') {
-      // Permite de 9 a 15 dígitos con prefijo opcional: +34 600000000, 600123456
-      if (!/^(\+?\d{1,3}[- ]?)?\d{9,12}$/.test(formData.contact_value.replace(/ /g, ''))) {
-        return alert("Por favor, introduce un número de teléfono válido.");
-      }
-    } else if (formData.contact_type === 'instagram') {
-      // Permite nombres de usuario con o sin @, o links directos
-      if (!/^@?[\w.-]+$/.test(formData.contact_value) && !/^https?:\/\/(www\.)?instagram\.com\/[\w.-]+\/?$/.test(formData.contact_value)) {
-        return alert("Por favor, introduce un @usuario de instagram válido o su enlace.");
+    // 2. Contacto (solo validar si se ha rellenado)
+    if (formData.contact_value) {
+      if (formData.contact_type === 'email') {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact_value)) {
+          return alert("Por favor, introduce un correo electrónico válido.");
+        }
+      } else if (formData.contact_type === 'phone') {
+        if (!/^(\+?\d{1,3}[- ]?)?\d{9,12}$/.test(formData.contact_value.replace(/ /g, ''))) {
+          return alert("Por favor, introduce un número de teléfono válido.");
+        }
+      } else if (formData.contact_type === 'instagram') {
+        if (!/^@?[\w.-]+$/.test(formData.contact_value) && !/^https?:\/\/(www\.)?instagram\.com\/[\w.-]+\/?$/.test(formData.contact_value)) {
+          return alert("Por favor, introduce un @usuario de instagram válido o su enlace.");
+        }
       }
     }
 
@@ -201,7 +201,7 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
 
           <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, auto) 1fr', gap: '1rem' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Contacto *</label>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Contacto (Opcional)</label>
               <select name="contact_type" value={formData.contact_type} onChange={handleChange} className="input-base">
                 <option value="email">Email</option>
                 <option value="phone">Teléfono</option>
@@ -210,8 +210,8 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
               </select>
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Valor de Contacto *</label>
-              <input required type="text" name="contact_value" value={formData.contact_value} onChange={handleChange} className="input-base" placeholder="tucorreo@ejemplo.com" />
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Valor de Contacto (Opcional)</label>
+              <input type="text" name="contact_value" value={formData.contact_value} onChange={handleChange} className="input-base" placeholder="tucorreo@ejemplo.com" />
             </div>
           </div>
 
