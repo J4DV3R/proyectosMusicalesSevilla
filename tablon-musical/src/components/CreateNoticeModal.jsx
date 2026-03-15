@@ -126,8 +126,11 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
         <div className="glass-panel modal-content" style={{ width: '100%', maxWidth: '500px', borderRadius: 'var(--border-radius-md)', padding: '2.5rem', textAlign: 'center', animation: 'fadeIn 0.3s ease' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🤘</div>
           <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--neon-green)' }}>¡ANUNCIO PUBLICADO!</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-            Tu anuncio ya está visible. Para poder borrarlo o editarlo en el futuro, <strong>debes guardar el siguiente enlace secreto</strong>. No lo compartas con nadie:
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.95rem' }}>
+            Tu anuncio ya está visible. Puedes editarlo o borrarlo en cualquier momento desde el <strong>icono de marcador</strong> (🔖) en la barra superior.
+          </p>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+            Si borras los datos del navegador o cambias de dispositivo, usa este <strong>enlace secreto de respaldo</strong>:
           </p>
           
           <div style={{ backgroundColor: '#000', padding: '1rem', borderRadius: '4px', border: '1px solid var(--border-color)', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
@@ -140,7 +143,7 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
           </div>
 
           <p style={{ color: 'var(--neon-pink)', fontSize: '0.85rem', marginBottom: '2rem', fontStyle: 'italic', fontWeight: 'bold' }}>
-            ⚠️ GUÁRDALO BIEN. Por tu privacidad, no guardamos cuentas de usuario. Si pierdes este enlace, será IMPOSIBLE recuperar el control de tu anuncio.
+            ⚠️ Si pierdes el acceso al marcador Y a este enlace, será IMPOSIBLE recuperar el control de tu anuncio.
           </p>
 
           <button onClick={closeAndReset} className="btn btn-primary" style={{ width: '100%' }}>
