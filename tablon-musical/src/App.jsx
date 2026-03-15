@@ -110,7 +110,7 @@ function App() {
     <div className="app-container">
       <header className="glass-panel" style={{ padding: '1rem 2rem', position: 'sticky', top: 0, zIndex: 100, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--neon-green)' }}>
-          SVQ_MUSIC_PROJECTS
+          SVQ_PROYECTOS_MUSICALES
         </h1>
         <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
           <Plus size={18} /> Publicar
