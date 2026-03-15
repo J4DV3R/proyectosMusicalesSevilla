@@ -142,8 +142,8 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
             </button>
           </div>
 
-          <p style={{ color: 'var(--neon-pink)', fontSize: '0.85rem', marginBottom: '2rem', fontStyle: 'italic', fontWeight: 'bold' }}>
-            ⚠️ Si pierdes el acceso al marcador Y a este enlace, será IMPOSIBLE recuperar el control de tu anuncio.
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '2rem', fontStyle: 'italic' }}>
+            💡 Este enlace es solo un respaldo. Normalmente podrás editar tu anuncio desde el icono 🔖 sin necesidad de este enlace.
           </p>
 
           <button onClick={closeAndReset} className="btn btn-primary" style={{ width: '100%' }}>
