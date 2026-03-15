@@ -3,7 +3,7 @@ import './App.css';
 import NoticeCard from './components/NoticeCard';
 import Filters from './components/Filters';
 import CreateNoticeModal from './components/CreateNoticeModal';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Sun, Moon } from 'lucide-react';
 import { supabase, uploadImage } from './lib/supabase';
 
 function App() {
@@ -12,6 +12,16 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved ? saved === 'dark' : true; // oscuro por defecto
+  });
+
+  // Aplicar tema al document
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
 
   // Fetch notices from Supabase
   useEffect(() => {
@@ -172,6 +182,32 @@ function App() {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
+
+      {/* Botón flotante de tema */}
+      <button
+        onClick={() => setDarkMode(!darkMode)}
+        title={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          left: '24px',
+          zIndex: 999,
+          width: '48px',
+          height: '48px',
+          borderRadius: '50%',
+          border: '1px solid var(--border-color)',
+          background: 'var(--surface-color)',
+          color: 'var(--text-primary)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          transition: 'all 0.3s ease'
+        }}
+      >
+        {darkMode ? <Sun size={22} /> : <Moon size={22} />}
+      </button>
     </div>
   );
 }
