@@ -93,7 +93,11 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
       }
     } catch (error) {
       console.error(error);
-      alert("Error publicando el anuncio. Por favor, revisa tu conexión.");
+      if (error.message === 'RATE_LIMIT_EXCEEDED') {
+        alert("Has alcanzado el límite de 3 anuncios recientes. Por favor, espera 10 minutos para proteger la web contra el SPAM.");
+      } else {
+        alert("Error publicando el anuncio. Por favor, revisa tu conexión.");
+      }
     } finally {
       setIsSubmitting(false);
     }

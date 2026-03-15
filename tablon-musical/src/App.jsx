@@ -81,6 +81,10 @@ function App() {
       
     if (error) {
       console.error('Error insertando en la DB', error);
+      // Propagar el mensaje exacto si es nuestra excepción personalizada
+      if (error.message && error.message.includes('RATE_LIMIT_EXCEEDED')) {
+        throw new Error('RATE_LIMIT_EXCEEDED');
+      }
       throw error;
     }
     
