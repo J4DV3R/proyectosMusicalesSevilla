@@ -12,7 +12,10 @@ export default function NoticeCard({ notice }) {
   // Buscar en la BD; si se eliminó, dar un fallback
   const catObj = categories.find(c => c.name === tag);
   const config = catObj ? { color: catObj.color, bg: catObj.bg_color } : { color: 'var(--neon-pink)', bg: 'rgba(255, 42, 109, 0.1)' };
-  
+
+  // Helper: añadir € solo si el usuario no lo incluyó ya
+  const formatPrice = (p) => p && !p.includes('€') ? `${p} €` : p;
+
   
   // Compatibilidad: usar nuevo array images, si no existe o es nulo, usar image_url antigua
   const displayImages = (images !== null && images !== undefined) ? images : (image_url ? [image_url] : []);
@@ -90,7 +93,7 @@ export default function NoticeCard({ notice }) {
       {(location || price) && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', fontSize: '0.85rem' }}>
           {location && <span style={{ color: 'var(--text-secondary)' }}>📍 {location}</span>}
-          {price && <span style={{ fontWeight: 600, color: 'var(--accent-color)' }}>{price}</span>}
+          {price && <span style={{ fontWeight: 600, color: 'var(--accent-color)' }}>{formatPrice(price)}</span>}
         </div>
       )}
 
@@ -173,7 +176,7 @@ export default function NoticeCard({ notice }) {
             {(location || price) && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '2rem', padding: '1rem', backgroundColor: 'var(--surface-color)', borderRadius: '8px' }}>
                 {location && <div><span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>UBICACIÓN</span>📍 {location}</div>}
-                {price && <div><span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>PRECIO</span><strong style={{ color: 'var(--neon-green)', fontSize: '1.1rem' }}>{price}</strong></div>}
+                {price && <div><span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>PRECIO</span><strong style={{ color: 'var(--neon-green)', fontSize: '1.1rem' }}>{formatPrice(price)}</strong></div>}
               </div>
             )}
 
