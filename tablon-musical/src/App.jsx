@@ -3,7 +3,7 @@ import './App.css';
 import NoticeCard from './components/NoticeCard';
 import Filters from './components/Filters';
 import CreateNoticeModal from './components/CreateNoticeModal';
-import { Plus, Search, Sun, Moon } from 'lucide-react';
+import { Plus, Search, Sun, Moon, Bookmark, Trash2 } from 'lucide-react';
 import { supabase, uploadImage } from './lib/supabase';
 
 function App() {
@@ -22,6 +22,24 @@ function App() {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
     localStorage.setItem('theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
+
+  // Mis anuncios guardados en localStorage
+  const [myNotices, setMyNotices] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('myNotices') || '[]'); } catch { return []; }
+  });
+  const [showMyNotices, setShowMyNotices] = useState(false);
+
+  const saveTokenLocally = (title, editToken) => {
+    const updated = [{ title, token: editToken, date: new Date().toLocaleDateString() }, ...myNotices];
+    setMyNotices(updated);
+    localStorage.setItem('myNotices', JSON.stringify(updated));
+  };
+
+  const removeLocalToken = (token) => {
+    const updated = myNotices.filter(n => n.token !== token);
+    setMyNotices(updated);
+    localStorage.setItem('myNotices', JSON.stringify(updated));
+  };
 
   // Fetch notices from Supabase
   useEffect(() => {
@@ -99,9 +117,11 @@ function App() {
     }
     
     if (data && data.length > 0) {
-      // Añadir al principio del estado
       setNotices([data[0], ...notices]);
-      // Devolver los datos para que el Modal lea el edit_token
+      // Guardar token en localStorage para recuperacion futura
+      if (data[0].edit_token) {
+        saveTokenLocally(formData.title, data[0].edit_token);
+      }
       return data[0];
     }
   };
@@ -112,9 +132,17 @@ function App() {
         <h1 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--neon-green)' }}>
           SVQ_PROYECTOS_MUSICALES
         </h1>
-        <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
-          <Plus size={18} /> Publicar
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button className="btn" onClick={() => setShowMyNotices(!showMyNotices)} title="Mis Anuncios Guardados" style={{ position: 'relative', borderColor: myNotices.length > 0 ? 'var(--neon-green)' : 'var(--border-color)', color: myNotices.length > 0 ? 'var(--neon-green)' : 'var(--text-secondary)' }}>
+            <Bookmark size={18} />
+            {myNotices.length > 0 && (
+              <span style={{ position: 'absolute', top: '-6px', right: '-6px', background: 'var(--neon-pink)', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{myNotices.length}</span>
+            )}
+          </button>
+          <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
+            <Plus size={18} /> Publicar
+          </button>
+        </div>
       </header>
 
       <main className="main-content">
@@ -149,6 +177,39 @@ function App() {
         </section>
 
         <Filters activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
+
+        {/* Panel de Mis Anuncios */}
+        {showMyNotices && (
+          <section className="glass-panel" style={{ maxWidth: '600px', margin: '0 auto 2rem auto', padding: '1.5rem', borderRadius: 'var(--border-radius-md)', animation: 'fadeIn 0.2s ease' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ fontSize: '1rem', color: 'var(--neon-green)' }}>MIS ANUNCIOS (este dispositivo)</h3>
+              <button onClick={() => setShowMyNotices(false)} style={{ color: 'var(--text-secondary)', cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem' }}>&#10006;</button>
+            </div>
+            {myNotices.length === 0 ? (
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No has publicado nada desde este dispositivo.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {myNotices.map((n, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: 'var(--border-radius-sm)' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.title}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{n.date}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                      <a href={`/edit/${n.token}`} className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--neon-blue)', color: 'var(--neon-blue)' }}>Editar</a>
+                      <button onClick={() => removeLocalToken(n.token)} style={{ color: 'var(--text-secondary)', cursor: 'pointer', background: 'none', border: 'none', padding: '4px' }} title="Olvidar enlace">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+              Estos enlaces se guardan SOLO en este navegador. Si borras los datos del navegador, se perderan.
+            </p>
+          </section>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
           {isLoading ? (
