@@ -3,12 +3,13 @@ import './App.css';
 import NoticeCard from './components/NoticeCard';
 import Filters from './components/Filters';
 import CreateNoticeModal from './components/CreateNoticeModal';
-import { Plus } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { supabase, uploadImage } from './lib/supabase';
 
 function App() {
   const [notices, setNotices] = useState([]);
   const [activeFilter, setActiveFilter] = useState('Todos');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -36,8 +37,19 @@ function App() {
     fetchNotices();
   }, []);
 
-  // Filter logic
-  const filteredNotices = notices.filter(n => activeFilter === 'Todos' || n.tag === activeFilter);
+  // Filter logic: Categoría + Texto (case-insensitive)
+  const filteredNotices = notices.filter(n => {
+    // 1. Coincidencia de Categoría
+    const matchesCategory = activeFilter === 'Todos' || n.tag === activeFilter;
+    
+    // 2. Coincidencia de Texto (Buscador)
+    const lowerQuery = searchQuery.toLowerCase();
+    const matchesSearch = !searchQuery || 
+      (n.title && n.title.toLowerCase().includes(lowerQuery)) || 
+      (n.description && n.description.toLowerCase().includes(lowerQuery));
+      
+    return matchesCategory && matchesSearch;
+  });
 
   // Handle new notice
   const handleCreateNotice = async (formData, files = []) => {
@@ -99,6 +111,27 @@ function App() {
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto', letterSpacing: '0.05em' }}>
             TABLÓN DE ANUNCIOS POR Y PARA ARTISTAS DE LA ESCENA SEVILLANA
           </p>
+        </section>
+
+        {/* Buscador de Texto */}
+        <section style={{ maxWidth: '600px', margin: '0 auto 2rem auto', position: 'relative' }}>
+          <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>
+            <Search size={20} />
+          </div>
+          <input 
+            type="text" 
+            placeholder="Buscar por palabra clave, grupo, instrumento..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input-base"
+            style={{ 
+              paddingLeft: '48px', 
+              borderRadius: '24px', 
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+              border: searchQuery ? '1px solid var(--neon-green)' : '1px solid var(--border-color)',
+              transition: 'border-color 0.3s ease'
+            }}
+          />
         </section>
 
         <Filters activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
