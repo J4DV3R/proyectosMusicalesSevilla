@@ -9,8 +9,10 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
     tag: '', // Se asignará la primera categoría disponible por defecto luego
     location: '',
     price: '',
-    contact_type: 'email',
-    contact_value: ''
+    contactEmail: '',
+    contactPhone: '',
+    contactInstagram: '',
+    contactOther: ''
   });
   
   const { categories } = useCategories();
@@ -65,27 +67,34 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
       }
     }
 
-    // 2. Contacto (solo validar si se ha rellenado)
-    if (formData.contact_value) {
-      if (formData.contact_type === 'email') {
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact_value)) {
-          return alert("Por favor, introduce un correo electrónico válido.");
-        }
-      } else if (formData.contact_type === 'phone') {
-        if (!/^(\+?\d{1,3}[- ]?)?\d{9,12}$/.test(formData.contact_value.replace(/ /g, ''))) {
-          return alert("Por favor, introduce un número de teléfono válido.");
-        }
-      } else if (formData.contact_type === 'instagram') {
-        if (!/^@?[\w.-]+$/.test(formData.contact_value) && !/^https?:\/\/(www\.)?instagram\.com\/[\w.-]+\/?$/.test(formData.contact_value)) {
-          return alert("Por favor, introduce un @usuario de instagram válido o su enlace.");
-        }
-      }
+    // 2. Contacto Múltiple (validar solo los rellenos)
+    const contacts = [];
+    if (formData.contactEmail) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) return alert("Email no válido.");
+      contacts.push({ type: 'email', value: formData.contactEmail });
+    }
+    if (formData.contactPhone) {
+      if (!/^(\+?\d{1,3}[- ]?)?\d{9,12}$/.test(formData.contactPhone.replace(/ /g, ''))) return alert("Teléfono no válido.");
+      contacts.push({ type: 'phone', value: formData.contactPhone });
+    }
+    if (formData.contactInstagram) {
+      if (!/^@?[\w.-]+$/.test(formData.contactInstagram) && !/^https?:\/\/(www\.)?instagram\.com\/[\w.-]+\/?$/.test(formData.contactInstagram)) return alert("Instagram no válido.");
+      contacts.push({ type: 'instagram', value: formData.contactInstagram });
+    }
+    if (formData.contactOther) {
+      contacts.push({ type: 'other', value: formData.contactOther });
     }
 
     setIsSubmitting(true);
     
     try {
-      const result = await onSubmit(formData, files);
+      const dataToSubmit = { ...formData, contacts };
+      delete dataToSubmit.contactEmail;
+      delete dataToSubmit.contactPhone;
+      delete dataToSubmit.contactInstagram;
+      delete dataToSubmit.contactOther;
+
+      const result = await onSubmit(dataToSubmit, files);
       if (result && result.edit_token) {
         setSuccessToken(result.edit_token);
       } else {
@@ -202,19 +211,25 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
             </div>
           )}
 
-          <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, auto) 1fr', gap: '1rem' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Contacto (Opcional)</label>
-              <select name="contact_type" value={formData.contact_type} onChange={handleChange} className="input-base">
-                <option value="email">Email</option>
-                <option value="phone">Teléfono</option>
-                <option value="instagram">Instagram</option>
-                <option value="other">Otro</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Valor de Contacto (Opcional)</label>
-              <input type="text" name="contact_value" value={formData.contact_value} onChange={handleChange} className="input-base" placeholder="tucorreo@ejemplo.com" />
+          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.95rem', color: 'var(--neon-blue)', fontWeight: 'bold' }}>Medios de Contacto (Opcionales, rellena los que quieras)</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 1fr) minmax(150px, 1fr)', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>📧 Email</label>
+                <input type="email" name="contactEmail" value={formData.contactEmail} onChange={handleChange} className="input-base" placeholder="tucorreo@ejemplo.com" />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>📱 Teléfono</label>
+                <input type="tel" name="contactPhone" value={formData.contactPhone} onChange={handleChange} className="input-base" placeholder="+34 600000000" />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>📸 Instagram</label>
+                <input type="text" name="contactInstagram" value={formData.contactInstagram} onChange={handleChange} className="input-base" placeholder="@usuario o URL" />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>💬 Otro enlace/contacto</label>
+                <input type="text" name="contactOther" value={formData.contactOther} onChange={handleChange} className="input-base" placeholder="Cualquier otra forma..." />
+              </div>
             </div>
           </div>
 

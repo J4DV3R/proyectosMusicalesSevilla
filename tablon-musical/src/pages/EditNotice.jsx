@@ -34,14 +34,33 @@ export default function EditNotice() {
         alert("Enlace secreto inválido o el anuncio ya fue borrado.");
         navigate('/');
       } else {
+        // Procesar contactos
+        let email = '', phone = '', instagram = '', other = '';
+        if (data.contacts && Array.isArray(data.contacts) && data.contacts.length > 0) {
+          data.contacts.forEach(c => {
+            if (c.type === 'email') email = c.value;
+            if (c.type === 'phone') phone = c.value;
+            if (c.type === 'instagram') instagram = c.value;
+            if (c.type === 'other') other = c.value;
+          });
+        } else if (data.contact_value) {
+          const t = data.contact_type || 'other';
+          if (t === 'email') email = data.contact_value;
+          if (t === 'phone') phone = data.contact_value;
+          if (t === 'instagram') instagram = data.contact_value;
+          if (t === 'other') other = data.contact_value;
+        }
+
         setFormData({
           title: data.title,
           description: data.description,
           tag: data.tag,
           location: data.location || '',
           price: data.price || '',
-          contact_type: data.contact_type,
-          contact_value: data.contact_value,
+          contactEmail: email,
+          contactPhone: phone,
+          contactInstagram: instagram,
+          contactOther: other
         });
         
         // Cargar array de imagenes (priorizando 'images' jsonb, o 'image_url' antiguo si no existe el campo)
@@ -96,19 +115,22 @@ export default function EditNotice() {
       }
     }
 
-    // 2. Contacto
-    if (formData.contact_type === 'email') {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact_value)) {
-        return alert("Introduce un correo válido.");
-      }
-    } else if (formData.contact_type === 'phone') {
-      if (!/^(\+?\d{1,3}[- ]?)?\d{9,12}$/.test(formData.contact_value.replace(/ /g, ''))) {
-        return alert("Introduce un teléfono válido.");
-      }
-    } else if (formData.contact_type === 'instagram') {
-      if (!/^@?[\w.-]+$/.test(formData.contact_value) && !/^https?:\/\/(www\.)?instagram\.com\/[\w.-]+\/?$/.test(formData.contact_value)) {
-        return alert("Introduce un Instagram válido.");
-      }
+    // 2. Contacto Múltiple (validar solo los rellenos)
+    const contacts = [];
+    if (formData.contactEmail) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) return alert("Email no válido.");
+      contacts.push({ type: 'email', value: formData.contactEmail });
+    }
+    if (formData.contactPhone) {
+      if (!/^(\+?\d{1,3}[- ]?)?\d{9,12}$/.test(formData.contactPhone.replace(/ /g, ''))) return alert("Teléfono no válido.");
+      contacts.push({ type: 'phone', value: formData.contactPhone });
+    }
+    if (formData.contactInstagram) {
+      if (!/^@?[\w.-]+$/.test(formData.contactInstagram) && !/^https?:\/\/(www\.)?instagram\.com\/[\w.-]+\/?$/.test(formData.contactInstagram)) return alert("Instagram no válido.");
+      contacts.push({ type: 'instagram', value: formData.contactInstagram });
+    }
+    if (formData.contactOther) {
+      contacts.push({ type: 'other', value: formData.contactOther });
     }
 
     setIsSubmitting(true);
@@ -132,16 +154,15 @@ export default function EditNotice() {
     const finalImagesArray = [...existingImages, ...uploadedUrls];
     
     // Update db using secure RPC
-    const { error } = await supabase.rpc('update_notice_with_token', {
+    const { error } = await supabase.rpc('update_notice_with_token_v2', {
       p_token: token,
       p_title: formData.title,
       p_description: formData.description,
       p_tag: formData.tag,
       p_location: formData.location || null,
       p_price: formData.price || null,
-      p_contact_type: formData.contact_type,
-      p_contact_value: formData.contact_value,
-      p_images: finalImagesArray // Pasamos JSONB array directamente
+      p_contacts: contacts,
+      p_images: finalImagesArray
     });
       
     setIsSubmitting(false);
@@ -230,19 +251,25 @@ export default function EditNotice() {
               </div>
             )}
 
-            <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, auto) 1fr', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-secondary)' }}>CONTACTO TIPO</label>
-                <select name="contact_type" value={formData.contact_type} onChange={handleChange} className="input-base">
-                  <option value="email">Email</option>
-                  <option value="phone">Teléfono</option>
-                  <option value="instagram">Instagram</option>
-                  <option value="other">Otro</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '6px', color: 'var(--text-secondary)' }}>VALOR CONTACTO</label>
-                <input required type="text" name="contact_value" value={formData.contact_value} onChange={handleChange} className="input-base" />
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', paddingBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '12px', color: 'var(--neon-blue)', fontWeight: 'bold' }}>MEDIOS DE CONTACTO (Opcionales)</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 1fr) minmax(150px, 1fr)', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>📧 Email</label>
+                  <input type="email" name="contactEmail" value={formData.contactEmail} onChange={handleChange} className="input-base" />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>📱 Teléfono</label>
+                  <input type="tel" name="contactPhone" value={formData.contactPhone} onChange={handleChange} className="input-base" />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>📸 Instagram</label>
+                  <input type="text" name="contactInstagram" value={formData.contactInstagram} onChange={handleChange} className="input-base" />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>💬 Otro enlace/contacto</label>
+                  <input type="text" name="contactOther" value={formData.contactOther} onChange={handleChange} className="input-base" />
+                </div>
               </div>
             </div>
 

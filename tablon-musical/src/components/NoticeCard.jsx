@@ -5,7 +5,7 @@ import { useCategories } from '../context/CategoryContext';
 export default function NoticeCard({ notice }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const { title, description, tag, image_url, images, contact_type, contact_value, created_at, location, price } = notice;
+  const { title, description, tag, image_url, images, contact_type, contact_value, created_at, location, price, contacts } = notice;
   
   const { categories } = useCategories();
   
@@ -20,27 +20,48 @@ export default function NoticeCard({ notice }) {
   // Compatibilidad: usar nuevo array images, si no existe o es nulo, usar image_url antigua
   const displayImages = (images !== null && images !== undefined) ? images : (image_url ? [image_url] : []);
 
-  const renderContact = () => {
-    let href = "#";
-    let displayValue = contact_value;
+  // Normalizar los contactos (por si vienen del sistema antiguo o el nuevo array jsonb)
+  let activeContacts = [];
+  if (contacts && Array.isArray(contacts) && contacts.length > 0) {
+    activeContacts = contacts;
+  } else if (contact_value) {
+    activeContacts = [{ type: contact_type || 'other', value: contact_value }];
+  }
 
-    if (contact_type === 'email') {
-      href = `mailto:${contact_value}`;
-    } else if (contact_type === 'phone') {
-      href = `tel:${contact_value.replace(/ /g, '')}`;
-    } else if (contact_type === 'instagram') {
-      // Si ya es un enlace, se usa. Si no, se construye
-      if (contact_value.startsWith('http')) {
-        href = contact_value;
-        const urlObj = new URL(contact_value);
-        displayValue = `@${urlObj.pathname.replace(/\//g, '')}`;
+  const hasContacts = activeContacts.length > 0;
+
+  const renderContactIcon = (type, props = {}) => {
+    switch (type) {
+      case 'email': return <Mail {...props} />;
+      case 'phone': return <Phone {...props} />;
+      case 'instagram': return <Instagram {...props} />;
+      default: return <span style={{ fontSize: props.size ? `${props.size}px` : '16px' }}>💬</span>;
+    }
+  };
+
+  const renderContactValue = (c) => {
+    if (!c.value) return null;
+    let href = "#";
+    let displayValue = c.value;
+    
+    if (c.type === 'email') {
+      href = `mailto:${c.value}`;
+    } else if (c.type === 'phone') {
+      href = `tel:${c.value.replace(/ /g, '')}`;
+    } else if (c.type === 'instagram') {
+      if (c.value.startsWith('http')) {
+        href = c.value;
+        try {
+          const urlObj = new URL(c.value);
+          displayValue = `@${urlObj.pathname.replace(/\\//g, '')}`;
+        } catch { displayValue = 'Instagram Link'; }
       } else {
-        const username = contact_value.replace('@', '');
+        const username = c.value.replace('@', '');
         href = `https://instagram.com/${username}`;
         displayValue = `@${username}`;
       }
     }
-
+    
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem', color: 'var(--neon-blue)', wordBreak: 'break-all', textDecoration: 'none', fontWeight: 600 }}>
         {displayValue}
@@ -97,16 +118,17 @@ export default function NoticeCard({ notice }) {
         </div>
       )}
 
-      {/* Contact Footer (Sin funcion de enlace para evitar click doble en la carta, se activa en modo expandido) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: 'auto' }}>
-        <div style={{ color: 'var(--text-secondary)' }}>
-          {contact_type === 'email' && <Mail size={16} />}
-          {contact_type === 'phone' && <Phone size={16} />}
-          {contact_type === 'instagram' && <Instagram size={16} />}
-          {(!contact_type || contact_type === 'other') && <span style={{ fontSize: '16px' }}>💬</span>}
+      {/* Contact Footer Solo Si Hay Contactos */}
+      {hasContacts && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: 'auto' }}>
+          <div style={{ color: 'var(--text-secondary)', display: 'flex', gap: '4px' }}>
+            {activeContacts.map((c, i) => (
+              <span key={i}>{renderContactIcon(c.type, { size: 16 })}</span>
+            ))}
+          </div>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Ver contacto...</span>
         </div>
-        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Contactar al autor...</span>
-      </div>
+      )}
 
     </div>
 
@@ -181,24 +203,23 @@ export default function NoticeCard({ notice }) {
             )}
 
             {/* Contact Footer Interactivo Funcional */}
-            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <h4 style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>INFORMACIÓN DE CONTACTO</h4>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.1rem' }}>
-                <div style={{ color: 'var(--neon-blue)', backgroundColor: 'rgba(0,0,0,0.5)', padding: '10px', borderRadius: '50%' }}>
-                  {contact_type === 'email' && <Mail size={20} />}
-                  {contact_type === 'phone' && <Phone size={20} />}
-                  {contact_type === 'instagram' && <Instagram size={20} />}
-                  {(!contact_type || contact_type === 'other') && <span style={{ fontSize: '20px' }}>💬</span>}
+            {hasContacts && (
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <h4 style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>INFORMACIÓN DE CONTACTO</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {activeContacts.map((c, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '1.1rem' }}>
+                      <div style={{ color: 'var(--neon-blue)', backgroundColor: 'rgba(0,0,0,0.5)', padding: '10px', borderRadius: '50%', display: 'flex' }}>
+                        {renderContactIcon(c.type, { size: 20 })}
+                      </div>
+                      <div style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>
+                        {renderContactValue(c)}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {contact_type === 'other' ? (
-                  <span style={{ color: 'var(--text-primary)', wordBreak: 'break-all' }}>
-                    {contact_value}
-                  </span>
-                ) : (
-                  <div style={{ fontSize: '1.1rem', padding: '4px 0' }}>{renderContact()}</div>
-                )}
               </div>
-            </div>
+            )}
 
           </div>
         </div>
