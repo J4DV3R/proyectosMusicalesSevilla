@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase, uploadImage } from '../lib/supabase';
-import { Trash2, AlertTriangle, ArrowLeft, Upload, Image as ImageIcon, X, Save } from 'lucide-react';
+import { Trash2, AlertTriangle, ArrowLeft, Upload, Image as ImageIcon, X, Save, Sun, Moon } from 'lucide-react';
 import { useCategories } from '../context/CategoryContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function EditNotice() {
   const { token } = useParams();
@@ -10,6 +11,7 @@ export default function EditNotice() {
   
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { darkMode, toggleTheme } = useTheme();
   
   // States for images
   const [existingImages, setExistingImages] = useState([]);
@@ -334,6 +336,32 @@ export default function EditNotice() {
           </form>
         </div>
       </main>
+
+      {/* Botón flotante de tema */}
+      <button
+        onClick={toggleTheme}
+        title={darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          left: '24px',
+          zIndex: 999,
+          width: '48px',
+          height: '48px',
+          borderRadius: '50%',
+          border: '1px solid var(--border-color)',
+          background: 'var(--surface-color)',
+          color: 'var(--text-primary)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          transition: 'all 0.3s ease'
+        }}
+      >
+        {darkMode ? <Sun size={22} /> : <Moon size={22} />}
+      </button>
     </div>
   );
 }

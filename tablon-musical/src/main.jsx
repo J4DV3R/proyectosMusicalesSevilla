@@ -5,18 +5,21 @@ import App from './App.jsx';
 import AdminPanel from './pages/AdminPanel.jsx';
 import EditNotice from './pages/EditNotice.jsx';
 import { CategoryProvider } from './context/CategoryContext.jsx';
+import { ThemeProvider } from './context/ThemeContext.jsx';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <CategoryProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route path="/edit/:token" element={<EditNotice />} />
-          <Route path="/admin" element={<AdminPanel />} />
-        </Routes>
-      </BrowserRouter>
-    </CategoryProvider>
+    <ThemeProvider>
+      <CategoryProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<App />} />
+            <Route path="/edit/:token" element={<EditNotice />} />
+            <Route path="/admin" element={<AdminPanel />} />
+          </Routes>
+        </BrowserRouter>
+      </CategoryProvider>
+    </ThemeProvider>
   </React.StrictMode>
 );

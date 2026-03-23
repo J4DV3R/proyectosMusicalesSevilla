@@ -5,6 +5,7 @@ import Filters from './components/Filters';
 import CreateNoticeModal from './components/CreateNoticeModal';
 import { Plus, Search, Sun, Moon, Bookmark, Trash2 } from 'lucide-react';
 import { supabase, uploadImage } from './lib/supabase';
+import { useTheme } from './context/ThemeContext';
 
 function App() {
   const [notices, setNotices] = useState([]);
@@ -12,16 +13,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    return saved ? saved === 'dark' : true; // oscuro por defecto
-  });
-
-  // Aplicar tema al document
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
-    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
-  }, [darkMode]);
+  const { darkMode, setDarkMode } = useTheme();
 
   // Mis anuncios guardados en localStorage
   const [myNotices, setMyNotices] = useState(() => {
