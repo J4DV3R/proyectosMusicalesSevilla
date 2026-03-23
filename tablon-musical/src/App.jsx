@@ -41,6 +41,35 @@ function App() {
     localStorage.setItem('myNotices', JSON.stringify(updated));
   };
 
+  const handleDeleteNotice = async (token) => {
+    if (!window.confirm("¿Seguro que quieres borrar este anuncio permanentemente de la plataforma?")) return;
+    
+    // Intentar borrar de la base de datos usando RPC
+    const { error } = await supabase.rpc('delete_notice_with_token', { p_token: token });
+    if (error && error.message && !error.message.includes('ya fue borrado')) {
+      console.error(error);
+      alert("Error al intentar borrar el anuncio de la base de datos.");
+      return;
+    }
+    
+    alert("Anuncio eliminado definitivamente.");
+    
+    // Borrar de la lista local
+    removeLocalToken(token);
+    
+    // Recargar tabla central
+    const { data } = await supabase
+      .from('notices')
+      .select('id, title, description, tag, location, price, contact_type, contact_value, contacts, image_url, images, created_at')
+      .order('created_at', { ascending: false });
+      
+    if (data) {
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+      setNotices(data.filter(n => new Date(n.created_at) > fourteenDaysAgo));
+    }
+  };
+
   // Fetch notices from Supabase
   useEffect(() => {
     async function fetchNotices() {
@@ -196,8 +225,8 @@ function App() {
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{n.date}</span>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-                      <a href={`/edit/${n.token}`} className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--neon-blue)', color: 'var(--neon-blue)' }}>Editar</a>
-                      <button onClick={() => removeLocalToken(n.token)} style={{ color: 'var(--text-secondary)', cursor: 'pointer', background: 'none', border: 'none', padding: '4px' }} title="Olvidar enlace">
+                      <a href={`/edit/${n.token}`} className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--neon-blue)', color: 'var(--neon-blue)' }} title="Editar o ver detalles">Editar</a>
+                      <button onClick={() => handleDeleteNotice(n.token)} style={{ color: 'var(--neon-pink)', cursor: 'pointer', background: 'none', border: 'none', padding: '4px' }} title="Borrar anuncio de la plataforma">
                         <Trash2 size={14} />
                       </button>
                     </div>
