@@ -103,9 +103,9 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
     } catch (error) {
       console.error(error);
       if (error.message === 'RATE_LIMIT_EXCEEDED') {
-        alert("Has alcanzado el límite de 3 anuncios recientes. Por favor, espera 10 minutos para proteger la web contra el SPAM.");
+        alert("Has subido demasiados anuncios, por favor espera un rato (10 min) para proteger la web contra el SPAM.");
       } else {
-        alert("Error publicando el anuncio. Por favor, revisa tu conexión.");
+        alert("Hubo un problema al publicar. Por favor, inténtalo de nuevo o comprueba que el servidor esté activo.");
       }
     } finally {
       setIsSubmitting(false);
@@ -114,7 +114,8 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
 
   const closeAndReset = () => {
     setFormData({
-      title: '', description: '', tag: categories.length > 0 ? categories[0].name : '', location: '', price: '', contact_type: 'email', contact_value: ''
+      title: '', description: '', tag: categories.length > 0 ? categories[0].name : '', location: '', price: '', 
+      contactEmail: '', contactPhone: '', contactInstagram: '', contactOther: ''
     });
     setFiles([]);
     setPreviews([]);

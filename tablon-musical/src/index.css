@@ -167,7 +167,6 @@ a:hover {
   transition: all var(--transition-fast);
   border: 1px solid transparent;
   position: relative;
-  overflow: hidden;
 }
 
 .btn-primary {

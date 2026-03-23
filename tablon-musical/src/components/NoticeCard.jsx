@@ -78,8 +78,8 @@ export default function NoticeCard({ notice }) {
         style={{ position: 'relative', borderRadius: 'var(--border-radius-md)', padding: '1.5rem', transition: 'transform var(--transition-fast)', display: 'flex', flexDirection: 'column', height: '100%', cursor: 'pointer' }}
       >
         {/* Indicador visual de clic */}
-        <div style={{ position: 'absolute', top: '10px', right: '10px', opacity: 0.5, pointerEvents: 'none' }}>
-          <span style={{ fontSize: '10px', backgroundColor: 'rgba(0,0,0,0.5)', padding: '4px 8px', borderRadius: '4px' }}>VER MÁS</span>
+        <div style={{ position: 'absolute', bottom: '1.5rem', right: '1.5rem', opacity: 0.8, pointerEvents: 'none', zIndex: 10 }}>
+          <span style={{ fontSize: '10px', backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.2)' }}>VER MÁS</span>
         </div>
       
       {/* Image (Optional) - Puesto al principio para que el margin negativo encaje con los bordes */}
