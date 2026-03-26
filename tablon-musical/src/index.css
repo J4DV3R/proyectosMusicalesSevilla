@@ -215,6 +215,12 @@ a:hover {
   color: var(--border-color);
 }
 
+textarea.input-base {
+  min-height: 80px;
+  max-height: 400px;
+  resize: vertical;
+}
+
 /* Custom Selection */
 ::selection {
   background: var(--accent-color);

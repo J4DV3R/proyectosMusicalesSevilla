@@ -60,10 +60,10 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
     e.preventDefault();
     
     // Validaciones RegEx
-    // 1. Precio (si es Compra/Venta) - Permite números y formato opcional decimal/divisa ej: 15.50, 20€
+    // 1. Precio (si es Compra/Venta) - Permite números y formato opcional decimal/divisa ej: 15.50, 20 €
     if (formData.tag === 'Compra/Venta' && formData.price) {
-      if (!/^[\d., ]*(€|\$)?$/i.test(formData.price)) {
-        return alert("El formato del precio no es válido. Usa números (ej. '150', '20.50 €').");
+      if (!/^(?:€\s*)?[\d., ]*(?:\s*€)?$/i.test(formData.price)) {
+        return alert("El formato del precio no es válido. Usa números (ej. '150', '20.50 €', '€ 150').");
       }
     }
 
