@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import App from './App.jsx';
-import AdminPanel from './pages/AdminPanel.jsx';
-import EditNotice from './pages/EditNotice.jsx';
+
+const App = lazy(() => import('./App.jsx'));
+const AdminPanel = lazy(() => import('./pages/AdminPanel.jsx'));
+const EditNotice = lazy(() => import('./pages/EditNotice.jsx'));
 import { CategoryProvider } from './context/CategoryContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import './index.css';
@@ -13,11 +14,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <ThemeProvider>
       <CategoryProvider>
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<App />} />
-            <Route path="/edit/:token" element={<EditNotice />} />
-            <Route path="/admin" element={<AdminPanel />} />
-          </Routes>
+          <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'var(--neon-green)', fontFamily: 'monospace', fontSize: '1.2rem', backgroundColor: 'var(--bg-color, #0a0a0a)' }}>[ INICIANDO SISTEMA . . . ]</div>}>
+            <Routes>
+              <Route path="/" element={<App />} />
+              <Route path="/edit/:token" element={<EditNotice />} />
+              <Route path="/admin" element={<AdminPanel />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </CategoryProvider>
     </ThemeProvider>

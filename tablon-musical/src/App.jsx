@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import './App.css';
 import NoticeCard from './components/NoticeCard';
 import Filters from './components/Filters';
-import CreateNoticeModal from './components/CreateNoticeModal';
 import HomePage from './components/HomePage';
 import ReportsPage from './components/ReportsPage';
+
+const CreateNoticeModal = lazy(() => import('./components/CreateNoticeModal'));
 import { Plus, Search, Sun, Moon, Bookmark, Trash2, EyeOff } from 'lucide-react';
 import { supabase, uploadImage } from './lib/supabase';
 import { useTheme } from './context/ThemeContext';
@@ -322,11 +323,19 @@ function App() {
         )}
       </main>
 
-      <CreateNoticeModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleCreateNotice}
-      />
+      {isModalOpen && (
+        <Suspense fallback={
+          <div className="modal-container" style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)' }}>
+            <span style={{ color: 'var(--neon-blue)', fontFamily: 'monospace' }}>CARGANDO MODÚLO...</span>
+          </div>
+        }>
+          <CreateNoticeModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSubmit={handleCreateNotice}
+          />
+        </Suspense>
+      )}
 
       <style>{`
         @keyframes fadeIn {
