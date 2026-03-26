@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { X, Upload, Image as ImageIcon, Copy, Check } from 'lucide-react';
 import { useCategories } from '../context/CategoryContext';
 import { containsBadWords } from '../lib/badWords';
-import * as nsfwjs from 'nsfwjs';
-import '@tensorflow/tfjs';
 
 export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -26,20 +24,6 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
   const [copied, setCopied] = useState(false);
   const [nsfwModel, setNsfwModel] = useState(null);
 
-  // Cargar modelo nsfwjs cuando se monta el componente
-  useEffect(() => {
-    async function loadModel() {
-      try {
-        const model = await nsfwjs.load();
-        setNsfwModel(model);
-        console.log("NSFW model loaded successfully");
-      } catch (err) {
-        console.error("Failed to load NSFW model", err);
-      }
-    }
-    loadModel();
-  }, []);
-
   // Asegurar que si abre y no tiene tag y hay categorias cargadas se asigne la primera
   React.useEffect(() => {
     if (isOpen && categories.length > 0 && !formData.tag) {
@@ -52,28 +36,6 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const analyzeImage = async (file) => {
-    if (!nsfwModel) return false; // Fallback si no cargó el modelo
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
-      img.onload = async () => {
-        try {
-          const predictions = await nsfwModel.classify(img);
-          // Verificar si las categorías de Porn o Hentai tienen más de un 60% de probabilidad
-          const isNsfw = predictions.some(p => 
-            (p.className === 'Porn' || p.className === 'Hentai') && p.probability > 0.6
-          );
-          resolve(isNsfw);
-        } catch (error) {
-          console.error("Error analizano la imagen", error);
-          resolve(false);
-        }
-      };
-      img.onerror = () => resolve(false);
-    });
   };
 
   const handleFileChange = async (e) => {
@@ -89,8 +51,41 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
       const validFiles = [];
       const validPreviews = [];
 
+      // Cargar IA de forma difereda SOLO en el momento de subir la foto
+      let activeModel = nsfwModel;
+      if (!activeModel) {
+        try {
+          await import('@tensorflow/tfjs');
+          const nsfwModule = await import('nsfwjs');
+          activeModel = await nsfwModule.load();
+          setNsfwModel(activeModel);
+        } catch (err) {
+          console.error("Error cargando módulo IA", err);
+        }
+      }
+
+      const analyzeImageLocal = async (file) => {
+        if (!activeModel) return false;
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.src = URL.createObjectURL(file);
+          img.onload = async () => {
+            try {
+              const predictions = await activeModel.classify(img);
+              const isNsfw = predictions.some(p => 
+                (p.className === 'Porn' || p.className === 'Hentai') && p.probability > 0.6
+              );
+              resolve(isNsfw);
+            } catch (error) {
+              resolve(false);
+            }
+          };
+          img.onerror = () => resolve(false);
+        });
+      };
+
       for (let file of selectedFiles) {
-        const isBad = await analyzeImage(file);
+        const isBad = await analyzeImageLocal(file);
         if (isBad) {
           hasNsfwEvent = true;
         } else {
