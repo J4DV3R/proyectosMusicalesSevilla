@@ -4,6 +4,7 @@ import NoticeCard from './components/NoticeCard';
 import Filters from './components/Filters';
 import CreateNoticeModal from './components/CreateNoticeModal';
 import HomePage from './components/HomePage';
+import ReportsPage from './components/ReportsPage';
 import { Plus, Search, Sun, Moon, Bookmark, Trash2, EyeOff } from 'lucide-react';
 import { supabase, uploadImage } from './lib/supabase';
 import { useTheme } from './context/ThemeContext';
@@ -18,7 +19,7 @@ function App() {
 
   // Pestañas
   const [activeTab, setActiveTab] = useState('home');
-  const [tabVisibility, setTabVisibility] = useState({ home: true, ads: true });
+  const [tabVisibility, setTabVisibility] = useState({ home: true, ads: true, reports: true });
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Mis anuncios guardados en localStorage
@@ -151,8 +152,9 @@ function App() {
 
   // Pestañas disponibles: el admin ve todas, el público solo las activas
   const TABS = [
-    { id: 'home', label: 'Inicio' },
-    { id: 'ads',  label: 'Anuncios' },
+    { id: 'home',    label: 'Inicio' },
+    { id: 'ads',     label: 'Anuncios' },
+    { id: 'reports', label: 'Reportar' },
   ];
   const visibleTabs = TABS.filter(t => isAdmin || tabVisibility[t.id]);
 
@@ -225,6 +227,9 @@ function App() {
       <main className="main-content">
         {/* ── PESTAÑA INICIO ── */}
         {activeTab === 'home' && <HomePage onGoToAds={() => setActiveTab('ads')} />}
+
+        {/* ── PESTAÑA REPORTAR ── */}
+        {activeTab === 'reports' && <ReportsPage />}
 
         {/* ── PESTAÑA ANUNCIOS ── */}
         {activeTab === 'ads' && (

@@ -22,8 +22,12 @@ export default function AdminPanel() {
   const [loadingCat, setLoadingCat] = useState(false);
 
   // Visibilidad de pestañas
-  const [tabVisibility, setTabVisibility] = useState({ home: true, ads: true });
+  const [tabVisibility, setTabVisibility] = useState({ home: true, ads: true, reports: true });
   const [savingSettings, setSavingSettings] = useState(false);
+
+  // Reportes
+  const [reports, setReports] = useState([]);
+  const [loadingReports, setLoadingReports] = useState(false);
 
   const fetchAllNotices = async () => {
     setLoadingData(true);
@@ -44,12 +48,23 @@ export default function AdminPanel() {
     if (data?.value) setTabVisibility(data.value);
   };
 
+  const fetchReports = async () => {
+    setLoadingReports(true);
+    const { data, error } = await supabase
+      .from('reports')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && data) setReports(data);
+    setLoadingReports(false);
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
         fetchAllNotices();
         fetchTabSettings();
+        fetchReports();
       }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -57,6 +72,7 @@ export default function AdminPanel() {
       if (session) {
         fetchAllNotices();
         fetchTabSettings();
+        fetchReports();
       }
     });
     return () => subscription.unsubscribe();
@@ -121,12 +137,22 @@ export default function AdminPanel() {
       .update({ value: newVisibility, updated_at: new Date().toISOString() })
       .eq('id', 'tabs_visibility');
     if (error) {
-      alert("Error al guardar la configuración. ¿Está creada la tabla site_settings?");
+      alert('Error al guardar la configuración. ¿Está creada la tabla site_settings?');
       console.error(error);
-      // Revertir si falla
       setTabVisibility(tabVisibility);
     }
     setSavingSettings(false);
+  };
+
+  const handleUpdateReportStatus = async (id, newStatus) => {
+    const { error } = await supabase.from('reports').update({ status: newStatus }).eq('id', id);
+    if (!error) setReports(reports.map(r => r.id === id ? { ...r, status: newStatus } : r));
+  };
+
+  const handleDeleteReport = async (id) => {
+    if (!window.confirm('¿Borrar este reporte definitivamente?')) return;
+    const { error } = await supabase.from('reports').delete().eq('id', id);
+    if (!error) setReports(reports.filter(r => r.id !== id));
   };
 
   // ── PANTALLA DE LOGIN ──
@@ -173,8 +199,9 @@ export default function AdminPanel() {
           </p>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             {[
-              { id: 'home', label: 'Inicio' },
-              { id: 'ads', label: 'Anuncios' },
+              { id: 'home',    label: 'Inicio' },
+              { id: 'ads',     label: 'Anuncios' },
+              { id: 'reports', label: 'Reportar' },
             ].map(tab => {
               const isVisible = tabVisibility[tab.id];
               return (
@@ -217,6 +244,79 @@ export default function AdminPanel() {
           </div>
           {savingSettings && <p style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Guardando…</p>}
         </div>
+
+        {/* ════ GESTIÓN DE REPORTES ════ */}
+        <h2 style={{ marginBottom: '1.5rem', marginTop: '3rem', color: 'var(--text-primary)' }}>REPORTES Y SUGERENCIAS</h2>
+        {loadingReports ? (
+          <p style={{ color: 'var(--text-secondary)' }}>Cargando reportes...</p>
+        ) : reports.length === 0 ? (
+          <div className="glass-panel" style={{ padding: '2rem', borderRadius: 'var(--border-radius-md)', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            No hay reportes todavía. ¡Buena señal!
+          </div>
+        ) : (
+          <div className="glass-panel" style={{ borderRadius: 'var(--border-radius-md)', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>FECHA</th>
+                  <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>TIPO</th>
+                  <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>DESCRIPCIÓN</th>
+                  <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>CONTACTO</th>
+                  <th style={{ padding: '1rem', color: 'var(--text-secondary)', textAlign: 'center' }}>ESTADO</th>
+                  <th style={{ padding: '1rem', color: 'var(--text-secondary)', textAlign: 'center' }}>KILL</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reports.map(report => {
+                  const statusColor = report.status === 'resuelto' ? 'var(--neon-green)' : report.status === 'leído' ? 'var(--neon-blue)' : 'var(--neon-pink)';
+                  return (
+                    <tr key={report.id} style={{ borderBottom: '1px solid var(--border-color)', opacity: report.status === 'resuelto' ? 0.55 : 1 }}>
+                      <td style={{ padding: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                        {new Date(report.created_at).toLocaleDateString()}
+                      </td>
+                      <td style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, color: report.type === 'Error' ? 'var(--neon-pink)' : report.type === 'Sugerencia' ? 'var(--neon-green)' : 'var(--neon-blue)' }}>
+                        {report.type}
+                      </td>
+                      <td style={{ padding: '1rem', fontSize: '0.85rem', maxWidth: '350px' }}>
+                        <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={report.description}>
+                          {report.description}
+                        </span>
+                      </td>
+                      <td style={{ padding: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        {report.contact || '—'}
+                      </td>
+                      <td style={{ padding: '1rem', textAlign: 'center' }}>
+                        <select
+                          value={report.status}
+                          onChange={e => handleUpdateReportStatus(report.id, e.target.value)}
+                          style={{
+                            background: 'var(--surface-color)',
+                            border: `1px solid ${statusColor}`,
+                            color: statusColor,
+                            borderRadius: '4px',
+                            padding: '4px 8px',
+                            fontSize: '0.78rem',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          <option value="pendiente">Pendiente</option>
+                          <option value="leído">Leído</option>
+                          <option value="resuelto">Resuelto</option>
+                        </select>
+                      </td>
+                      <td style={{ padding: '1rem', textAlign: 'center' }}>
+                        <button onClick={() => handleDeleteReport(report.id)} style={{ color: 'var(--neon-pink)', padding: '8px', cursor: 'pointer', background: 'none', border: 'none' }} title="Borrar reporte">
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* ════ GESTIÓN DE ANUNCIOS ════ */}
         <h2 style={{ marginBottom: '2rem', color: 'var(--text-primary)' }}>GESTIÓN CENTRAL</h2>
