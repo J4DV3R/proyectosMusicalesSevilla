@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Upload, Image as ImageIcon, Copy, Check } from 'lucide-react';
 import { useCategories } from '../context/CategoryContext';
+import { containsBadWords } from '../lib/badWords';
+import * as nsfwjs from 'nsfwjs';
+import '@tensorflow/tfjs';
 
 export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -21,6 +24,21 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successToken, setSuccessToken] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [nsfwModel, setNsfwModel] = useState(null);
+
+  // Cargar modelo nsfwjs cuando se monta el componente
+  useEffect(() => {
+    async function loadModel() {
+      try {
+        const model = await nsfwjs.load();
+        setNsfwModel(model);
+        console.log("NSFW model loaded successfully");
+      } catch (err) {
+        console.error("Failed to load NSFW model", err);
+      }
+    }
+    loadModel();
+  }, []);
 
   // Asegurar que si abre y no tiene tag y hay categorias cargadas se asigne la primera
   React.useEffect(() => {
@@ -36,7 +54,29 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e) => {
+  const analyzeImage = async (file) => {
+    if (!nsfwModel) return false; // Fallback si no cargó el modelo
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = async () => {
+        try {
+          const predictions = await nsfwModel.classify(img);
+          // Verificar si las categorías de Porn o Hentai tienen más de un 60% de probabilidad
+          const isNsfw = predictions.some(p => 
+            (p.className === 'Porn' || p.className === 'Hentai') && p.probability > 0.6
+          );
+          resolve(isNsfw);
+        } catch (error) {
+          console.error("Error analizano la imagen", error);
+          resolve(false);
+        }
+      };
+      img.onerror = () => resolve(false);
+    });
+  };
+
+  const handleFileChange = async (e) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
       
@@ -44,10 +84,28 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
         return alert("Solo puedes subir un máximo de 3 fotos.");
       }
 
-      setFiles(prev => [...prev, ...selectedFiles].slice(0, 3));
-      
-      const newPreviews = selectedFiles.map(f => URL.createObjectURL(f));
-      setPreviews(prev => [...prev, ...newPreviews].slice(0, 3));
+      setIsSubmitting(true); // Desactiva temporalmente el botón de publicar/adjuntar
+      let hasNsfwEvent = false;
+      const validFiles = [];
+      const validPreviews = [];
+
+      for (let file of selectedFiles) {
+        const isBad = await analyzeImage(file);
+        if (isBad) {
+          hasNsfwEvent = true;
+        } else {
+          validFiles.push(file);
+          validPreviews.push(URL.createObjectURL(file));
+        }
+      }
+
+      if (hasNsfwEvent) {
+        alert("🚨 SE HA BLOQUEADO UNA IMAGEN 🚨\n\nNuestra IA ha detectado contenido explícito o no apropiado en alguna de las imágenes seleccionadas. Por favor, selecciona otras imágenes.");
+      }
+
+      setFiles(prev => [...prev, ...validFiles].slice(0, 3));
+      setPreviews(prev => [...prev, ...validPreviews].slice(0, 3));
+      setIsSubmitting(false);
     }
   };
 
@@ -59,15 +117,20 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // 1. Validación de palabras malsonantes
+    if (containsBadWords(formData.title) || containsBadWords(formData.description)) {
+      return alert("El título o la descripción contienen lenguaje inapropiado.\n\nPor favor, modera tu vocabulario antes de publicar el anuncio en este tablón público.");
+    }
+
     // Validaciones RegEx
-    // 1. Precio (si es Compra/Venta) - Permite números y formato opcional decimal/divisa ej: 15.50, 20 €
+    // 2. Precio (si es Compra/Venta) - Permite números y formato opcional decimal/divisa ej: 15.50, 20 €, € 150
     if (formData.tag === 'Compra/Venta' && formData.price) {
       if (!/^(?:€\s*)?[\d., ]*(?:\s*€)?$/i.test(formData.price)) {
         return alert("El formato del precio no es válido. Usa números (ej. '150', '20.50 €', '€ 150').");
       }
     }
 
-    // 2. Contacto Múltiple (validar solo los rellenos)
+    // 3. Contacto Múltiple (validar solo los rellenos)
     const contacts = [];
     if (formData.contactEmail) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) return alert("Email no válido.");
@@ -102,7 +165,7 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
       }
     } catch (error) {
       console.error(error);
-      if (error.message === 'RATE_LIMIT_EXCEEDED') {
+      if (error.message && error.message.includes('RATE_LIMIT_EXCEEDED')) {
         alert("Has subido demasiados anuncios, por favor espera un rato (10 min) para proteger la web contra el SPAM.");
       } else {
         alert("Hubo un problema al publicar. Por favor, inténtalo de nuevo o comprueba que el servidor esté activo.");
@@ -130,6 +193,7 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Vistas...
   if (successToken) {
     return (
       <div className="modal-container" style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(4px)' }}>
@@ -235,7 +299,10 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Imágenes Adjuntas (Mínimo 0 - Máximo 3)</label>
+            <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              Imágenes Adjuntas (Mínimo 0 - Máximo 3) 
+              {isSubmitting && <span style={{color: 'var(--neon-blue)', marginLeft: '10px', fontSize: '0.8rem'}}>Analizando imágenes...</span>}
+            </label>
             <div style={{ padding: '1.5rem', border: '2px dashed var(--border-color)', borderRadius: 'var(--border-radius-sm)', textAlign: 'center', backgroundColor: 'var(--surface-color)' }}>
               
               {previews.length > 0 ? (
@@ -257,7 +324,7 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
                   <p style={{ fontSize: '0.9rem', display: previews.length === 0 ? 'block' : 'none' }}>Haz clic o arrastra imágenes aquí</p>
                   <label className="btn btn-secondary" style={{ marginTop: previews.length === 0 ? '0.5rem' : '0', cursor: 'pointer' }}>
                     <Upload size={16} /> Seleccionar Archivos {previews.length > 0 && `(${previews.length}/3)`}
-                    <input type="file" accept="image/*" multiple onChange={handleFileChange} style={{ display: 'none' }} />
+                    <input type="file" accept="image/*" multiple onChange={handleFileChange} style={{ display: 'none' }} disabled={isSubmitting} />
                   </label>
                 </div>
               )}
