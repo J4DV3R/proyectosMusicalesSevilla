@@ -175,12 +175,6 @@ function App() {
           SVQ_PROYECTOS_MUSICALES
         </h1>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button className="btn" onClick={() => setShowMyNotices(!showMyNotices)} title="Mis Anuncios Guardados" style={{ position: 'relative', borderColor: myNotices.length > 0 ? 'var(--neon-green)' : 'var(--border-color)', color: myNotices.length > 0 ? 'var(--neon-green)' : 'var(--text-secondary)' }}>
-            <Bookmark size={18} />
-            {myNotices.length > 0 && (
-              <span style={{ position: 'absolute', top: '-6px', right: '-6px', background: 'var(--neon-pink)', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{myNotices.length}</span>
-            )}
-          </button>
           <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
             <Plus size={18} /> Publicar
           </button>
@@ -244,25 +238,51 @@ function App() {
               </p>
             </section>
 
-            {/* Buscador */}
-            <section style={{ maxWidth: '600px', margin: '0 auto 2rem auto', position: 'relative' }}>
-              <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>
-                <Search size={20} />
+            {/* Buscador + Mis Anuncios */}
+            <section style={{ maxWidth: '600px', margin: '0 auto 2rem auto', display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <div style={{ position: 'relative', flex: 1 }}>
+                <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>
+                  <Search size={20} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar por palabra clave, grupo, instrumento..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="input-base"
+                  style={{
+                    paddingLeft: '48px',
+                    borderRadius: '24px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                    border: searchQuery ? '1px solid var(--neon-green)' : '1px solid var(--border-color)',
+                    transition: 'border-color 0.3s ease',
+                    width: '100%'
+                  }}
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Buscar por palabra clave, grupo, instrumento..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="input-base"
-                style={{
-                  paddingLeft: '48px',
-                  borderRadius: '24px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                  border: searchQuery ? '1px solid var(--neon-green)' : '1px solid var(--border-color)',
-                  transition: 'border-color 0.3s ease'
+              <button 
+                className="btn" 
+                onClick={() => setShowMyNotices(!showMyNotices)} 
+                title="Mis Anuncios Guardados" 
+                style={{ 
+                  position: 'relative', 
+                  height: '48px', 
+                  width: '48px', 
+                  minWidth: '48px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  borderColor: myNotices.length > 0 ? 'var(--neon-green)' : 'var(--border-color)', 
+                  color: myNotices.length > 0 ? 'var(--neon-green)' : 'var(--text-secondary)',
+                  padding: 0
                 }}
-              />
+              >
+                <Bookmark size={20} />
+                {myNotices.length > 0 && (
+                  <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: 'var(--neon-pink)', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{myNotices.length}</span>
+                )}
+              </button>
             </section>
 
             <Filters activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
