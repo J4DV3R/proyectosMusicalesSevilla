@@ -4,6 +4,7 @@ import { supabase, uploadImage } from '../lib/supabase';
 import { Trash2, AlertTriangle, ArrowLeft, Upload, Image as ImageIcon, X, Save, Sun, Moon } from 'lucide-react';
 import { useCategories } from '../context/CategoryContext';
 import { useTheme } from '../context/ThemeContext';
+import { containsBadWords } from '../lib/badWords';
 
 export default function EditNotice() {
   const { token } = useParams();
@@ -18,8 +19,8 @@ export default function EditNotice() {
   const [newFiles, setNewFiles] = useState([]);
   const [newPreviews, setNewPreviews] = useState([]);
   
-  // States for the form
   const [formData, setFormData] = useState({});
+  const [nsfwModel, setNsfwModel] = useState(null);
 
   const { categories } = useCategories();
   
@@ -82,7 +83,7 @@ export default function EditNotice() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
       
@@ -90,10 +91,60 @@ export default function EditNotice() {
         return alert("El anuncio no puede tener más de 3 fotos en total.");
       }
 
-      setNewFiles(prev => [...prev, ...selectedFiles].slice(0, 3));
-      
-      const previews = selectedFiles.map(f => URL.createObjectURL(f));
-      setNewPreviews(prev => [...prev, ...previews].slice(0, 3));
+      setIsSubmitting(true);
+      let hasNsfwEvent = false;
+      const validFiles = [];
+      const validPreviews = [];
+
+      let activeModel = nsfwModel;
+      if (!activeModel) {
+        try {
+          await import('@tensorflow/tfjs');
+          const nsfwModule = await import('nsfwjs');
+          activeModel = await nsfwModule.load();
+          setNsfwModel(activeModel);
+        } catch (err) {
+          console.error("Error cargando módulo IA", err);
+        }
+      }
+
+      const analyzeImageLocal = async (file) => {
+        if (!activeModel) return false;
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.src = URL.createObjectURL(file);
+          img.onload = async () => {
+            try {
+              const predictions = await activeModel.classify(img);
+              const isNsfw = predictions.some(p => 
+                (p.className === 'Porn' || p.className === 'Hentai') && p.probability > 0.6
+              );
+              resolve(isNsfw);
+            } catch (error) {
+              resolve(false);
+            }
+          };
+          img.onerror = () => resolve(false);
+        });
+      };
+
+      for (let file of selectedFiles) {
+        const isBad = await analyzeImageLocal(file);
+        if (isBad) {
+          hasNsfwEvent = true;
+        } else {
+          validFiles.push(file);
+          validPreviews.push(URL.createObjectURL(file));
+        }
+      }
+
+      if (hasNsfwEvent) {
+        alert("🚨 SE HA BLOQUEADO UNA IMAGEN 🚨\n\nNuestra IA ha detectado contenido explícito o no apropiado en alguna de las imágenes seleccionadas. Por favor, selecciona otras imágenes.");
+      }
+
+      setNewFiles(prev => [...prev, ...validFiles].slice(0, 3));
+      setNewPreviews(prev => [...prev, ...validPreviews].slice(0, 3));
+      setIsSubmitting(false);
     }
   };
 
@@ -109,6 +160,11 @@ export default function EditNotice() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     
+    // 1. Validación de palabras malsonantes
+    if (containsBadWords(formData.title) || containsBadWords(formData.description)) {
+      return alert("El título o la descripción contienen lenguaje inapropiado.\\n\\nPor favor, modera tu vocabulario antes de continuar.");
+    }
+
     // Validaciones RegEx
     // 1. Precio
     if (formData.tag === 'Compra/Venta' && formData.price) {
