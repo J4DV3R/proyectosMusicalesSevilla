@@ -125,7 +125,7 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
       }
     }
 
-    // 3. Contacto Múltiple (validar solo los rellenos)
+    // 3. Contacto Múltiple (validar si al menos hay uno y con formato)
     const contacts = [];
     if (formData.contactEmail) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) return alert("Email no válido.");
@@ -141,6 +141,10 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
     }
     if (formData.contactOther) {
       contacts.push({ type: 'other', value: formData.contactOther });
+    }
+
+    if (contacts.length === 0) {
+      return alert("El contacto es obligatorio. Por favor, rellena al menos uno de los medios de contacto (Email, Teléfono, Instagram u Otro).");
     }
 
     setIsSubmitting(true);
@@ -272,7 +276,7 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
           )}
 
           <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.95rem', color: 'var(--neon-blue)', fontWeight: 'bold' }}>Medios de Contacto (Opcionales, rellena los que quieras)</label>
+            <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.95rem', color: 'var(--neon-blue)', fontWeight: 'bold' }}>Medios de Contacto (Obligatorio rellenar al menos uno)</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 1fr) minmax(150px, 1fr)', gap: '1rem' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>📧 Email</label>

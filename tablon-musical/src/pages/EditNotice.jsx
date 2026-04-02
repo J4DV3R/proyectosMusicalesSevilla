@@ -117,7 +117,7 @@ export default function EditNotice() {
       }
     }
 
-    // 2. Contacto Múltiple (validar solo los rellenos)
+    // 2. Contacto Múltiple (validar si al menos hay uno y con formato)
     const contacts = [];
     if (formData.contactEmail) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) return alert("Email no válido.");
@@ -133,6 +133,10 @@ export default function EditNotice() {
     }
     if (formData.contactOther) {
       contacts.push({ type: 'other', value: formData.contactOther });
+    }
+
+    if (contacts.length === 0) {
+      return alert("El contacto es obligatorio. Por favor, rellena al menos uno de los medios de contacto (Email, Teléfono, Instagram u Otro).");
     }
 
     setIsSubmitting(true);
@@ -254,7 +258,7 @@ export default function EditNotice() {
             )}
 
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', paddingBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '12px', color: 'var(--neon-blue)', fontWeight: 'bold' }}>MEDIOS DE CONTACTO (Opcionales)</label>
+              <label style={{ display: 'block', marginBottom: '12px', color: 'var(--neon-blue)', fontWeight: 'bold' }}>MEDIOS DE CONTACTO (Obligatorio rellenar al menos uno)</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 1fr) minmax(150px, 1fr)', gap: '1rem' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>📧 Email</label>
