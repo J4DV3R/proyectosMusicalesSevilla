@@ -96,7 +96,7 @@ function App() {
     async function fetchNotices() {
       const { data, error } = await supabase
         .from('notices')
-        .select('id, title, description, tag, location, price, contact_type, contact_value, image_url, images, created_at')
+        .select('id, title, description, tag, location, price, contact_type, contact_value, contacts, image_url, images, created_at')
         .order('created_at', { ascending: false });
       if (!error && data) {
         const fourteenDaysAgo = new Date();
@@ -112,8 +112,8 @@ function App() {
     const matchesCategory = activeFilter === 'Todos' || n.tag === activeFilter;
     const lowerQuery = searchQuery.toLowerCase();
     const matchesSearch = !searchQuery ||
-      (n.title && n.title.toLowerCase().includes(lowerQuery)) ||
-      (n.description && n.description.toLowerCase().includes(lowerQuery));
+      (n.title && String(n.title).toLowerCase().includes(lowerQuery)) ||
+      (n.description && String(n.description).toLowerCase().includes(lowerQuery));
     return matchesCategory && matchesSearch;
   });
 
