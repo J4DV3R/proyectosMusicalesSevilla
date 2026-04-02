@@ -14,7 +14,7 @@ export default function NoticeCard({ notice }) {
   const config = catObj ? { color: catObj.color, bg: catObj.bg_color } : { color: 'var(--neon-pink)', bg: 'rgba(255, 42, 109, 0.1)' };
 
   // Helper: añadir € solo si el usuario no lo incluyó ya
-  const formatPrice = (p) => p && !p.includes('€') ? `${p} €` : p;
+  const formatPrice = (p) => p && !String(p).includes('€') ? `${p} €` : p;
 
   
   // Compatibilidad: usar nuevo array images, si no existe o es nulo, usar image_url antigua
@@ -47,16 +47,16 @@ export default function NoticeCard({ notice }) {
     if (c.type === 'email') {
       href = `mailto:${c.value}`;
     } else if (c.type === 'phone') {
-      href = `tel:${c.value.replace(/ /g, '')}`;
+      href = `tel:${String(c.value).replace(/ /g, '')}`;
     } else if (c.type === 'instagram') {
-      if (c.value.startsWith('http')) {
+      if (String(c.value).startsWith('http')) {
         href = c.value;
         try {
           const urlObj = new URL(c.value);
           displayValue = `@${urlObj.pathname.replace(/\\//g, '')}`;
         } catch { displayValue = 'Instagram Link'; }
       } else {
-        const username = c.value.replace('@', '');
+        const username = String(c.value).replace('@', '');
         href = `https://instagram.com/${username}`;
         displayValue = `@${username}`;
       }
