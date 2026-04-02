@@ -339,9 +339,13 @@ export default function AdminPanel() {
                 {notices.map(notice => (
                   <tr key={notice.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.2s' }}>
                     <td style={{ padding: '1rem', fontSize: '0.85rem' }}>{new Date(notice.created_at).toLocaleDateString()}</td>
-                    <td style={{ padding: '1rem' }}>{notice.title.substring(0, 30)}...</td>
+                    <td style={{ padding: '1rem' }}>{String(notice.title || '').substring(0, 30)}...</td>
                     <td style={{ padding: '1rem', color: 'var(--accent-color)', fontSize: '0.85rem' }}>{notice.tag}</td>
-                    <td style={{ padding: '1rem', fontSize: '0.85rem' }}>{notice.contact_value}</td>
+                    <td style={{ padding: '1rem', fontSize: '0.85rem' }}>
+                      {notice.contacts && notice.contacts.length > 0 
+                        ? notice.contacts.map(c => c.value).join(', ') 
+                        : notice.contact_value || 'Sin contacto'}
+                    </td>
                     <td style={{ padding: '1rem', fontSize: '0.85rem' }}>
                       <a href={`/edit/${notice.edit_token}`} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline' }}>Ver Edit</a>
                     </td>
