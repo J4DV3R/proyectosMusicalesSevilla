@@ -60,6 +60,14 @@ export default function NoticeCard({ notice }) {
         href = `https://instagram.com/${username}`;
         displayValue = `@${username}`;
       }
+    } else {
+      // Tipo 'other': usar el valor como enlace directo
+      const val = String(c.value);
+      if (val.startsWith('http://') || val.startsWith('https://')) {
+        href = val;
+      } else {
+        href = `https://${val}`;
+      }
     }
     
     return (
