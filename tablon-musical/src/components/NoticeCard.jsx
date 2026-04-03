@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Mail, Phone, Instagram } from 'lucide-react';
+import { Mail, Phone, Instagram, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useCategories } from '../context/CategoryContext';
 
 export default function NoticeCard({ notice }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const { title, description, tag, image_url, images, contact_type, contact_value, created_at, location, price, contacts } = notice;
+  const navigate = useNavigate();
+  const { title, description, tag, image_url, images, contact_type, contact_value, created_at, location, price, contacts, user_id, profiles } = notice;
   
   const { categories } = useCategories();
   
@@ -102,14 +104,25 @@ export default function NoticeCard({ notice }) {
         </div>
       )}
 
-      {/* Header (Tag & Date) */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+      {/* Header (Tag & Date & Author) */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', flexWrap: 'wrap', gap: '8px' }}>
         <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, backgroundColor: config.bg, color: config.color }}>
           {tag}
         </span>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-          {new Date(created_at).toLocaleDateString()}
-        </span>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {user_id && profiles && profiles.username && (
+            <button 
+              onClick={(e) => { e.stopPropagation(); navigate(`/profile/${user_id}`); }} 
+              style={{ fontSize: '0.75rem', color: 'var(--neon-green)', display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              title="Ver Perfil"
+            >
+              <User size={12} /> {profiles.username}
+            </button>
+          )}
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+            {new Date(created_at).toLocaleDateString()}
+          </span>
+        </div>
       </div>
 
       {/* Content Colapsado */}
@@ -187,13 +200,24 @@ export default function NoticeCard({ notice }) {
 
           <div style={{ padding: '2rem' }}>
             {/* Header tags expandido */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
               <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 600, backgroundColor: config.bg, color: config.color }}>
                 {tag}
               </span>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                {new Date(created_at).toLocaleDateString()}
-              </span>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                {user_id && profiles && profiles.username && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); navigate(`/profile/${user_id}`); }} 
+                    style={{ fontSize: '0.85rem', color: 'var(--neon-green)', display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    title="Ver Perfil"
+                  >
+                    <User size={14} /> @{profiles.username}
+                  </button>
+                )}
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  {new Date(created_at).toLocaleDateString()}
+                </span>
+              </div>
             </div>
 
             <h2 style={{ fontSize: '1.8rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>{title}</h2>
