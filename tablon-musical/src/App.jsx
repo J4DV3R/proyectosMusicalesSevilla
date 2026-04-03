@@ -27,6 +27,38 @@ function App() {
   const [myNotices, setMyNotices] = useState(() => {
     try { return JSON.parse(localStorage.getItem('myNotices') || '[]'); } catch { return []; }
   });
+
+  // Validar tokens locales contra la BD para detectar eliminaciones externas (admin)
+  useEffect(() => {
+    async function validateMyNotices() {
+      const stored = myNotices.filter(n => !n.deleted);
+      if (stored.length === 0) return;
+
+      const tokens = stored.map(n => n.token);
+      const { data, error } = await supabase
+        .from('notices')
+        .select('edit_token')
+        .in('edit_token', tokens);
+
+      if (error) return; // si falla la consulta, no tocar nada
+
+      const existingTokens = new Set((data || []).map(d => d.edit_token));
+      let changed = false;
+      const updated = myNotices.map(n => {
+        if (!n.deleted && !existingTokens.has(n.token)) {
+          changed = true;
+          return { ...n, deleted: true };
+        }
+        return n;
+      });
+
+      if (changed) {
+        setMyNotices(updated);
+        localStorage.setItem('myNotices', JSON.stringify(updated));
+      }
+    }
+    validateMyNotices();
+  }, []); // solo al montar
   const [showMyNotices, setShowMyNotices] = useState(false);
 
   // Comprobar sesión de admin
@@ -59,7 +91,13 @@ function App() {
   }, []);
 
   const saveTokenLocally = (title, editToken) => {
-    const updated = [{ title, token: editToken, date: new Date().toLocaleDateString() }, ...myNotices];
+    const updated = [{ title, token: editToken, date: new Date().toLocaleDateString(), deleted: false }, ...myNotices];
+    setMyNotices(updated);
+    localStorage.setItem('myNotices', JSON.stringify(updated));
+  };
+
+  const dismissDeletedNotice = (token) => {
+    const updated = myNotices.filter(n => n.token !== token);
     setMyNotices(updated);
     localStorage.setItem('myNotices', JSON.stringify(updated));
   };
@@ -170,15 +208,10 @@ function App() {
   return (
     <div className="app-container">
       {/* Header */}
-      <header className="glass-panel" style={{ padding: '1rem 2rem', position: 'sticky', top: 0, zIndex: 100, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header className="glass-panel" style={{ padding: '1rem 2rem', position: 'sticky', top: 0, zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <h1 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--neon-green)' }}>
           SVQ_PROYECTOS_MUSICALES
         </h1>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
-            <Plus size={18} /> Publicar
-          </button>
-        </div>
       </header>
 
       {/* Tab Navigation */}
@@ -233,9 +266,12 @@ function App() {
               <h2 style={{ fontSize: '3rem', marginBottom: '1rem', color: 'var(--text-primary)', textShadow: '4px 4px 0 var(--accent-color)' }}>
                 ESCENA MUSICAL SEVILLA
               </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto', letterSpacing: '0.05em' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto 1.5rem auto', letterSpacing: '0.05em' }}>
                 TABLÓN DE ANUNCIOS POR Y PARA ARTISTAS DE LA ESCENA SEVILLANA
               </p>
+              <button className="btn btn-primary" onClick={() => setIsModalOpen(true)} style={{ fontSize: '1rem', padding: '12px 28px' }}>
+                <Plus size={18} /> Publicar Anuncio
+              </button>
             </section>
 
             {/* Buscador + Mis Anuncios */}
@@ -280,7 +316,7 @@ function App() {
               >
                 <Bookmark size={20} />
                 {myNotices.length > 0 && (
-                  <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: 'var(--neon-pink)', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{myNotices.length}</span>
+                  <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: myNotices.some(n => n.deleted) ? 'var(--neon-pink)' : 'var(--neon-green)', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{myNotices.length}</span>
                 )}
               </button>
             </section>
@@ -299,16 +335,28 @@ function App() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {myNotices.map((n, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: 'var(--border-radius-sm)' }}>
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', backgroundColor: n.deleted ? 'rgba(255, 42, 109, 0.08)' : 'rgba(0,0,0,0.2)', border: `1px solid ${n.deleted ? 'var(--neon-pink)' : 'var(--border-color)'}`, borderRadius: 'var(--border-radius-sm)', opacity: n.deleted ? 0.85 : 1 }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.title}</span>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{n.date}</span>
+                          <span style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: n.deleted ? 'line-through' : 'none', color: n.deleted ? 'var(--text-secondary)' : 'inherit' }}>{n.title}</span>
+                          {n.deleted ? (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--neon-pink)', fontWeight: 600 }}>⚠️ Eliminado por un administrador</span>
+                          ) : (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{n.date}</span>
+                          )}
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-                          <a href={`/edit/${n.token}`} className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--neon-blue)', color: 'var(--neon-blue)' }} title="Editar o ver detalles">Editar</a>
-                          <button onClick={() => handleDeleteNotice(n.token)} style={{ color: 'var(--neon-pink)', cursor: 'pointer', background: 'none', border: 'none', padding: '4px' }} title="Borrar anuncio de la plataforma">
-                            <Trash2 size={14} />
-                          </button>
+                          {n.deleted ? (
+                            <button onClick={() => dismissDeletedNotice(n.token)} className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--text-secondary)', color: 'var(--text-secondary)' }} title="Quitar de la lista">
+                              Quitar
+                            </button>
+                          ) : (
+                            <>
+                              <a href={`/edit/${n.token}`} className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--neon-blue)', color: 'var(--neon-blue)' }} title="Editar o ver detalles">Editar</a>
+                              <button onClick={() => handleDeleteNotice(n.token)} style={{ color: 'var(--neon-pink)', cursor: 'pointer', background: 'none', border: 'none', padding: '4px' }} title="Borrar anuncio de la plataforma">
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     ))}
