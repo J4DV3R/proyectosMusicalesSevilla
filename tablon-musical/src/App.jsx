@@ -233,14 +233,16 @@ function App() {
         
         {/* Espacio izquierdo para balancear si es necesario, o boton de login de móviles */}
         <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
-          {currentUser ? (
+          {currentUser && !isAdmin ? (
             <a href={`/profile/${currentUser.id}`} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px' }} title="Mi Perfil">
               <User size={16} /> <span>{currentUser.username || 'Mi Perfil'}</span>
             </a>
-          ) : (
+          ) : !currentUser ? (
             <button onClick={() => setIsAuthModalOpen(true)} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px' }}>
               <LogIn size={16} /> <span className="hide-on-mobile">Registrarse / Entrar</span>
             </button>
+          ) : (
+            <div style={{ color: 'var(--neon-pink)', fontSize: '0.8rem', fontWeight: 'bold', border: '1px solid var(--neon-pink)', padding: '4px 10px', borderRadius: '4px' }}>ZONA ADMIN</div>
           )}
         </div>
 
