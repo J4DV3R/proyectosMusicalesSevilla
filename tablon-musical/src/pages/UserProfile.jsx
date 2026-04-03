@@ -50,7 +50,6 @@ export default function UserProfile() {
         setIsOwner(false);
       }
 
-      // 2. Cargar Perfil
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -59,9 +58,16 @@ export default function UserProfile() {
 
       if (profileError || !profileData) {
         setLoading(false);
-        setErrorObj("No se encontró al usuario en la base de datos.");
+        setErrorObj("No se encontró el perfil de usuario. Puede que sea una cuenta de sistema.");
         return;
       }
+      
+      if (profileData.is_admin && !isOwner) {
+        setLoading(false);
+        setErrorObj("No se puede consultar el perfil de una cuenta de administración.");
+        return;
+      }
+
       setProfile(profileData);
 
       // 3. Cargar Anuncios del usuario
