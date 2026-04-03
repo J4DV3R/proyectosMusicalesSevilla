@@ -19,11 +19,25 @@ export default function AuthModal({ isOpen, onClose }) {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data: authData, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+
+        // Verificar si es una cuenta de admin
+        if (authData.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', authData.user.id)
+            .single();
+
+          if (profile && profile.is_admin) {
+            await supabase.auth.signOut();
+            throw new Error("Esta cuenta es de administrador. Usa el panel Master.");
+          }
+        }
         onClose();
       } else {
         if (!username) {
