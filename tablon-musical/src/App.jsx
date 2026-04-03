@@ -6,7 +6,8 @@ import HomePage from './components/HomePage';
 import ReportsPage from './components/ReportsPage';
 
 const CreateNoticeModal = lazy(() => import('./components/CreateNoticeModal'));
-import { Plus, Search, Sun, Moon, Bookmark, Trash2, EyeOff } from 'lucide-react';
+const AuthModal = lazy(() => import('./components/AuthModal'));
+import { Plus, Search, Sun, Moon, Bookmark, Trash2, EyeOff, User, LogIn, LogOut } from 'lucide-react';
 import { supabase, uploadImage } from './lib/supabase';
 import { useTheme } from './context/ThemeContext';
 
@@ -22,6 +23,8 @@ function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [tabVisibility, setTabVisibility] = useState({ home: true, ads: true, reports: true });
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Mis anuncios guardados en localStorage
   const [myNotices, setMyNotices] = useState(() => {
@@ -61,14 +64,27 @@ function App() {
   }, []); // solo al montar
   const [showMyNotices, setShowMyNotices] = useState(false);
 
-  // Comprobar sesión de admin
+  // Comprobar sesión de usuario y rol admin
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAdmin(!!session);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAdmin(!!session);
-    });
+    const handleSession = async (session) => {
+      if (session) {
+        const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+        if (data) {
+          setCurrentUser(data);
+          setIsAdmin(data.is_admin === true);
+        } else {
+          setCurrentUser({ id: session.user.id, email: session.user.email });
+          setIsAdmin(false);
+        }
+      } else {
+        setCurrentUser(null);
+        setIsAdmin(false);
+      }
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => handleSession(session));
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => handleSession(session));
     return () => subscription.unsubscribe();
   }, []);
 
@@ -120,7 +136,7 @@ function App() {
     removeLocalToken(token);
     const { data } = await supabase
       .from('notices')
-      .select('id, title, description, tag, location, price, contact_type, contact_value, contacts, image_url, images, created_at')
+      .select('id, title, description, tag, location, price, contact_type, contact_value, contacts, image_url, images, created_at, user_id, profiles(username)')
       .order('created_at', { ascending: false });
     if (data) {
       const fourteenDaysAgo = new Date();
@@ -134,7 +150,7 @@ function App() {
     async function fetchNotices() {
       const { data, error } = await supabase
         .from('notices')
-        .select('id, title, description, tag, location, price, contact_type, contact_value, contacts, image_url, images, created_at')
+        .select('id, title, description, tag, location, price, contact_type, contact_value, contacts, image_url, images, created_at, user_id, profiles(username)')
         .order('created_at', { ascending: false });
       if (!error && data) {
         const fourteenDaysAgo = new Date();
@@ -169,10 +185,15 @@ function App() {
       }
       setIsLoading(false);
     }
+    const noticePayload = { ...formData, image_url: imagesUrls[0] || null, images: imagesUrls };
+    if (currentUser && currentUser.user_metadata === undefined) {
+      // Si currentUser.user_metadata es undefined es porque cogió el objeto profile {id, username...}
+      noticePayload.user_id = currentUser.id;
+    }
     const { data, error } = await supabase
       .from('notices')
-      .insert([{ ...formData, image_url: imagesUrls[0] || null, images: imagesUrls }])
-      .select();
+      .insert([noticePayload])
+      .select(`*, profiles(username)`);
     if (error) {
       console.error('Error insertando en la DB', error);
       if (error.message && error.message.includes('RATE_LIMIT_EXCEEDED')) {
@@ -208,10 +229,33 @@ function App() {
   return (
     <div className="app-container">
       {/* Header */}
-      <header className="glass-panel" style={{ padding: '1rem 2rem', position: 'sticky', top: 0, zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <h1 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--neon-green)' }}>
+      <header className="glass-panel" style={{ padding: '1rem 2rem', position: 'sticky', top: 0, zIndex: 100, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        
+        {/* Espacio izquierdo para balancear si es necesario, o boton de login de móviles */}
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
+          {currentUser ? (
+            <a href={`/profile/${currentUser.id}`} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px' }} title="Mi Perfil">
+              <User size={16} /> <span>{currentUser.username || 'Mi Perfil'}</span>
+            </a>
+          ) : (
+            <button onClick={() => setIsAuthModalOpen(true)} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px' }}>
+              <LogIn size={16} /> <span className="hide-on-mobile">Registrarse / Entrar</span>
+            </button>
+          )}
+        </div>
+
+        <h1 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--neon-green)', flex: 1, justifyContent: 'center', whiteSpace: 'nowrap' }}>
           SVQ_PROYECTOS_MUSICALES
         </h1>
+
+        {/* Espacio derecho: Salir si está logueado, o placeholder para centrar título */}
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px' }}>
+          {currentUser && (
+            <button onClick={() => supabase.auth.signOut()} className="btn" style={{ padding: '8px', color: 'var(--neon-pink)', borderColor: 'var(--neon-pink)', background: 'transparent' }} title="Cerrar Sesión">
+              <LogOut size={16} />
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Tab Navigation */}
@@ -402,6 +446,12 @@ function App() {
             onClose={() => setIsModalOpen(false)}
             onSubmit={handleCreateNotice}
           />
+        </Suspense>
+      )}
+
+      {isAuthModalOpen && (
+        <Suspense fallback={<div>Cargando...</div>}>
+          <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
         </Suspense>
       )}
 
