@@ -216,7 +216,7 @@ function App() {
 
       {/* Tab Navigation */}
       {visibleTabs.length > 1 && (
-        <nav style={{ borderBottom: '1px solid var(--border-color)', display: 'flex', padding: '0 2rem', backgroundColor: 'var(--surface-color)', gap: '4px' }}>
+        <nav style={{ borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center', padding: '0 2rem', backgroundColor: 'var(--surface-color)', gap: '4px' }}>
           {visibleTabs.map(tab => {
             const isHidden = !tabVisibility[tab.id]; // pestaña desactivada (solo admin la ve)
             const isActive = activeTab === tab.id;
