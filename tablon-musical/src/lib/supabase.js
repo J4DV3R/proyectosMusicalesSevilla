@@ -52,3 +52,69 @@ export async function uploadImage(file) {
     
   return data.publicUrl;
 }
+
+/**
+ * Sube una foto de perfil (avatar) al bucket 'avatars'
+ */
+export async function uploadAvatar(file) {
+  if (!file) return null;
+
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    throw new Error(`Tipo no permitido: ${file.type}. Solo JPG, PNG, WebP o GIF.`);
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error(`El archivo es demasiado grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo: 5MB.`);
+  }
+
+  const fileExt = file.name.split('.').pop().toLowerCase();
+  if (!ALLOWED_EXTENSIONS.includes(fileExt)) {
+    throw new Error(`Extensión .${fileExt} no permitida. Usa: ${ALLOWED_EXTENSIONS.join(', ')}.`);
+  }
+
+  const fileName = `${crypto.randomUUID()}.${fileExt}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(fileName, file, { upsert: true });
+
+  if (uploadError) throw uploadError;
+
+  const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
+  return data.publicUrl;
+}
+
+/**
+ * Sanitiza texto para prevenir inyección de código (XSS)
+ * Elimina etiquetas HTML y caracteres peligrosos
+ */
+export function sanitizeText(text) {
+  if (!text) return '';
+  return text
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/`/g, '&#x60;')
+    .replace(/\\/g, '&#x5C;')
+    .trim();
+}
+
+/**
+ * Valida la contraseña según las reglas de seguridad:
+ * - Entre 7 y 15 caracteres
+ * - Al menos 1 carácter especial
+ * - Sin secuencias de inyección de código
+ */
+export function validatePassword(password) {
+  if (!password) return 'La contraseña es obligatoria.';
+  if (password.length < 7) return 'La contraseña debe tener al menos 7 caracteres.';
+  if (password.length > 15) return 'La contraseña no puede superar los 15 caracteres.';
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password))
+    return 'La contraseña debe incluir al menos un carácter especial (!@#$%...).';
+  // Bloquear patrones de inyección SQL/código
+  const dangerous = /('|--|;|\/\*|\*\/|xp_|UNION|SELECT|INSERT|DROP|DELETE|UPDATE|EXEC|SCRIPT)/i;
+  if (dangerous.test(password)) return 'La contraseña contiene caracteres no permitidos.';
+  return null; // null = válida
+}
+

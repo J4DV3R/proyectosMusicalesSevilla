@@ -66,12 +66,24 @@ function App() {
 
   // Comprobar sesión de usuario y rol admin
   useEffect(() => {
+    // El email del admin se define en .env como VITE_ADMIN_EMAIL
+    const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
+
     const handleSession = async (session) => {
       if (session) {
+        // Comprobar si es la cuenta de admin por email (es más fiable que la BD)
+        const isAdminAccount = ADMIN_EMAIL && session.user.email === ADMIN_EMAIL;
+        if (isAdminAccount) {
+          setIsAdmin(true);
+          setCurrentUser(null); // El admin no tiene perfil público
+          return;
+        }
+
+        // Usuario normal: cargar su perfil de la BD
         const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
         if (data) {
           setCurrentUser(data);
-          setIsAdmin(data.is_admin === true);
+          setIsAdmin(false);
         } else {
           setCurrentUser({ id: session.user.id, email: session.user.email });
           setIsAdmin(false);
@@ -134,9 +146,10 @@ function App() {
     }
     alert("Anuncio eliminado definitivamente.");
     removeLocalToken(token);
+    const NOTICE_SELECT = 'id, title, description, tag, location, price, contact_type, contact_value, contacts, image_url, images, created_at, user_id';
     const { data } = await supabase
       .from('notices')
-      .select('id, title, description, tag, location, price, contact_type, contact_value, contacts, image_url, images, created_at, user_id, profiles(username)')
+      .select(NOTICE_SELECT)
       .order('created_at', { ascending: false });
     if (data) {
       const fourteenDaysAgo = new Date();
@@ -145,14 +158,26 @@ function App() {
     }
   };
 
-  // Fetch notices
+  // Fetch notices — query robusta: si el join con profiles falla por schema,
+  // vuelve a intentar sin el join
   useEffect(() => {
     async function fetchNotices() {
-      const { data, error } = await supabase
+      const BASE_SELECT = 'id, title, description, tag, location, price, contact_type, contact_value, contacts, image_url, images, created_at, user_id';
+      let { data, error } = await supabase
         .from('notices')
-        .select('id, title, description, tag, location, price, contact_type, contact_value, contacts, image_url, images, created_at, user_id, profiles(username)')
+        .select(`${BASE_SELECT}, profiles(username)`)
         .order('created_at', { ascending: false });
-      if (!error && data) {
+
+      // Si falla por el join de profiles (schema not ready), reintentar sin join
+      if (error) {
+        const retry = await supabase
+          .from('notices')
+          .select(BASE_SELECT)
+          .order('created_at', { ascending: false });
+        data = retry.data;
+      }
+
+      if (data) {
         const fourteenDaysAgo = new Date();
         fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
         setNotices(data.filter(n => new Date(n.created_at) > fourteenDaysAgo));
@@ -185,24 +210,47 @@ function App() {
       }
       setIsLoading(false);
     }
+
     const noticePayload = { ...formData, image_url: imagesUrls[0] || null, images: imagesUrls };
-    if (currentUser && currentUser.user_metadata === undefined) {
-      // Si currentUser.user_metadata es undefined es porque cogió el objeto profile {id, username...}
+
+    // Vincular con usuario si hay sesión activa y el perfil está cargado
+    // currentUser viene de 'profiles' (tiene 'username'), no de auth.user (tiene 'user_metadata')
+    if (currentUser && currentUser.username) {
       noticePayload.user_id = currentUser.id;
     }
+
+    // INSERT sin join a profiles para mayor compatibilidad
     const { data, error } = await supabase
       .from('notices')
       .insert([noticePayload])
-      .select(`*, profiles(username)`);
+      .select('*');
+
     if (error) {
       console.error('Error insertando en la DB', error);
+      // Si falla por user_id (columna no existe aún), reintentar sin él
+      if (error.code === '42703' || error.message?.includes('user_id')) {
+        delete noticePayload.user_id;
+        const retry = await supabase.from('notices').insert([noticePayload]).select('*');
+        if (retry.error) throw retry.error;
+        if (retry.data && retry.data.length > 0) {
+          const newNotice = { ...retry.data[0], profiles: null };
+          setNotices([newNotice, ...notices]);
+          if (retry.data[0].edit_token) saveTokenLocally(formData.title, retry.data[0].edit_token);
+        }
+        return;
+      }
       if (error.message && error.message.includes('RATE_LIMIT_EXCEEDED')) {
         throw new Error('RATE_LIMIT_EXCEEDED');
       }
       throw error;
     }
     if (data && data.length > 0) {
-      setNotices([data[0], ...notices]);
+      // Enriquecer con datos del perfil local si está disponible (evita un fetch extra)
+      const newNotice = {
+        ...data[0],
+        profiles: currentUser?.username ? { username: currentUser.username } : null
+      };
+      setNotices([newNotice, ...notices]);
       if (data[0].edit_token) {
         saveTokenLocally(formData.title, data[0].edit_token);
       }
@@ -321,7 +369,7 @@ function App() {
             </section>
 
             {/* Buscador + Mis Anuncios */}
-            <section style={{ maxWidth: '600px', margin: '0 auto 2rem auto', display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <section style={{ maxWidth: '600px', margin: '0 auto 2rem auto', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ position: 'relative', flex: 1 }}>
                 <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}>
                   <Search size={20} />
@@ -415,7 +463,7 @@ function App() {
             )}
 
             {/* Grid de anuncios */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            <div className="notices-grid">
               {isLoading ? (
                 <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
                   CARGANDO LA ESCENA...

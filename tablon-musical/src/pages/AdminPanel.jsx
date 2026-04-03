@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Trash2, Plus, Sun, Moon, Eye, EyeOff } from 'lucide-react';
+import { Trash2, Plus, Sun, Moon, Eye, EyeOff, Shield, ShieldOff, UserX } from 'lucide-react';
 import { useCategories } from '../context/CategoryContext';
 import { useTheme } from '../context/ThemeContext';
 
@@ -28,6 +28,13 @@ export default function AdminPanel() {
   // Reportes
   const [reports, setReports] = useState([]);
   const [loadingReports, setLoadingReports] = useState(false);
+
+  // Usuarios
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [blockModal, setBlockModal] = useState(null); // { userId, username }
+  const [blockDays, setBlockDays] = useState(7);
+  const [blockReason, setBlockReason] = useState('');
 
   const fetchAllNotices = async () => {
     setLoadingData(true);
@@ -58,6 +65,17 @@ export default function AdminPanel() {
     setLoadingReports(false);
   };
 
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, username, is_blocked, blocked_until, block_reason, is_admin, created_at')
+      .eq('is_admin', false)
+      .order('created_at', { ascending: false });
+    if (data) setUsers(data);
+    setLoadingUsers(false);
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -65,6 +83,7 @@ export default function AdminPanel() {
         fetchAllNotices();
         fetchTabSettings();
         fetchReports();
+        fetchUsers();
       }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -73,6 +92,7 @@ export default function AdminPanel() {
         fetchAllNotices();
         fetchTabSettings();
         fetchReports();
+        fetchUsers();
       }
     });
     return () => subscription.unsubscribe();
@@ -84,6 +104,39 @@ export default function AdminPanel() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoadingLogin(false);
     if (error) alert(error.message);
+  };
+
+  const handleBlockUser = async () => {
+    if (!blockModal) return;
+    const now = new Date();
+    const until = new Date(now.getTime() + blockDays * 24 * 60 * 60 * 1000);
+    const { error } = await supabase.rpc('admin_block_user', {
+      p_user_id: blockModal.userId,
+      p_blocked_until: until.toISOString(),
+      p_reason: blockReason || null
+    });
+    if (error) { alert('Error al bloquear: ' + error.message); return; }
+    setUsers(prev => prev.map(u =>
+      u.id === blockModal.userId ? { ...u, is_blocked: true, blocked_until: until.toISOString(), block_reason: blockReason || null } : u
+    ));
+    setBlockModal(null);
+    setBlockReason('');
+    setBlockDays(7);
+  };
+
+  const handleUnblockUser = async (userId) => {
+    const { error } = await supabase.rpc('admin_unblock_user', { p_user_id: userId });
+    if (error) { alert('Error al desbloquear: ' + error.message); return; }
+    setUsers(prev => prev.map(u =>
+      u.id === userId ? { ...u, is_blocked: false, blocked_until: null, block_reason: null } : u
+    ));
+  };
+
+  const handleDeleteUser = async (userId, username) => {
+    if (!window.confirm(`¿Eliminar permanentemente la cuenta de "${username}"? Esta acción no se puede deshacer.`)) return;
+    const { error } = await supabase.rpc('admin_delete_user', { p_user_id: userId });
+    if (error) { alert('Error al eliminar: ' + error.message); return; }
+    setUsers(prev => prev.filter(u => u.id !== userId));
   };
 
   const handleLogout = async () => {
@@ -418,6 +471,83 @@ export default function AdminPanel() {
 
         </div>
       </main>
+
+      {/* ════ GESTIÓN DE USUARIOS ════ */}
+      <main className="main-content">
+        <h2 style={{ marginBottom: '1.5rem', color: 'var(--text-primary)' }}>CUENTAS DE USUARIO</h2>
+        {loadingUsers ? (
+          <p style={{ color: 'var(--text-secondary)' }}>Cargando usuarios...</p>
+        ) : users.length === 0 ? (
+          <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', borderRadius: 'var(--border-radius-md)', marginBottom: '3rem' }}>
+            No hay usuarios registrados todavía.
+          </div>
+        ) : (
+          <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: 'var(--border-radius-md)', marginBottom: '3rem', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {users.map(user => {
+              const isBlocked = user.is_blocked && (!user.blocked_until || new Date(user.blocked_until) > new Date());
+              const blockedUntil = user.blocked_until ? new Date(user.blocked_until).toLocaleDateString('es-ES') : null;
+              return (
+                <div key={user.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: isBlocked ? 'rgba(255,42,109,0.08)' : 'rgba(0,0,0,0.3)', border: `1px solid ${isBlocked ? 'var(--neon-pink)' : 'var(--border-color)'}`, borderRadius: 'var(--border-radius-sm)', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{user.username}</span>
+                    {isBlocked && (
+                      <span style={{ marginLeft: '12px', fontSize: '0.78rem', color: 'var(--neon-pink)', border: '1px solid var(--neon-pink)', padding: '2px 8px', borderRadius: '12px' }}>
+                        BLOQUEADO{blockedUntil ? ` hasta ${blockedUntil}` : ''}
+                      </span>
+                    )}
+                    {user.block_reason && isBlocked && (
+                      <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>Motivo: {user.block_reason}</span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {isBlocked ? (
+                      <button onClick={() => handleUnblockUser(user.id)} className="btn" style={{ padding: '6px 14px', borderColor: 'var(--neon-green)', color: 'var(--neon-green)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <ShieldOff size={14} /> Desbloquear
+                      </button>
+                    ) : (
+                      <button onClick={() => setBlockModal({ userId: user.id, username: user.username })} className="btn" style={{ padding: '6px 14px', borderColor: 'var(--neon-blue)', color: 'var(--neon-blue)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Shield size={14} /> Bloquear
+                      </button>
+                    )}
+                    <button onClick={() => handleDeleteUser(user.id, user.username)} style={{ padding: '6px 10px', background: 'none', border: '1px solid var(--neon-pink)', color: 'var(--neon-pink)', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center' }} title="Eliminar cuenta">
+                      <UserX size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </main>
+
+      {/* MODAL BLOQUEO */}
+      {blockModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)', padding: '1rem' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', borderRadius: 'var(--border-radius-md)', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <h3 style={{ color: 'var(--neon-pink)' }}>🚫 Bloquear a "{blockModal.username}"</h3>
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Duración del bloqueo</label>
+              <select value={blockDays} onChange={e => setBlockDays(Number(e.target.value))} className="input-base">
+                <option value={1}>1 día</option>
+                <option value={3}>3 días</option>
+                <option value={7}>1 semana</option>
+                <option value={14}>2 semanas</option>
+                <option value={30}>1 mes (máximo)</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Motivo (opcional)</label>
+              <input type="text" value={blockReason} onChange={e => setBlockReason(e.target.value)} placeholder="Ej. Contenido inapropiado" className="input-base" maxLength={200} />
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button onClick={() => { setBlockModal(null); setBlockReason(''); setBlockDays(7); }} className="btn" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>Cancelar</button>
+              <button onClick={handleBlockUser} className="btn btn-primary" style={{ borderColor: 'var(--neon-pink)', color: 'var(--neon-pink)', backgroundColor: 'rgba(255,42,109,0.1)' }}>
+                Confirmar Bloqueo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Botón flotante de tema */}
       <button

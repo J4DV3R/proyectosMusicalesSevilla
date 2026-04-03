@@ -243,62 +243,174 @@ textarea.input-base {
 }
 
 /* ==========================================================================
-   RESPONSIVE DESIGN (Mobile First Adjustments)
+   RESPONSIVE DESIGN
    ========================================================================== */
+
+/* Utilidad: ocultar texto en móvil pequeño */
+.hide-on-mobile {
+  display: inline;
+}
+
+/* Grids de tarjetas adaptativos */
+.notices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+/* ── TABLET (≤ 1024px) ── */
+@media (max-width: 1024px) {
+  .notices-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+}
+
+/* ── MÓVIL (≤ 768px) ── */
 @media (max-width: 768px) {
+
+  /* === Layout base === */
   .main-content {
-    padding: 1rem;
+    padding: 0.75rem;
   }
 
-  /* Ajustar Cabecera Principal */
+  .notices-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  /* === Header: 3 zonas → stack vertical centrado === */
   header.glass-panel {
-    padding: 1rem !important;
-    gap: 1rem;
+    padding: 0.75rem 1rem !important;
     flex-wrap: wrap;
-    justify-content: center !important;
-    position: relative !important; /* Quitar sticky en móvil para dar más espacio real */
+    gap: 0.5rem;
+  }
+
+  /* Las 3 zonas flex-1 del header se comprimen; en móvil reorganizamos */
+  header.glass-panel > div:first-child {
+    order: 2;
+    flex: 0 0 auto;
   }
 
   header.glass-panel h1 {
-    font-size: 1.1rem !important;
-    text-align: center;
-    width: 100%;
-    justify-content: center;
-  }
-
-  /* Reducir títulos hero */
-  .main-content h2 {
-    font-size: 2rem !important;
-  }
-  
-  .main-content p {
     font-size: 0.95rem !important;
-    line-height: 1.4;
+    order: 1;
+    flex: 1 1 100%;
+    text-align: center;
+    justify-content: center !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  /* Ajustar paneles y tarjetas */
-  .glass-panel {
-    padding: 1.25rem !important;
+  header.glass-panel > div:last-child {
+    order: 3;
+    flex: 0 0 auto;
   }
 
-  /* Ajustes en Modales */
+  /* Ocultar texto largo en botones del header en móvil */
+  .hide-on-mobile {
+    display: none;
+  }
+
+  /* === Modales === */
   .modal-container {
     padding: 0.5rem !important;
+    align-items: flex-end !important; /* Slide desde abajo en móvil */
   }
-  
+
   .modal-content {
-    padding: 1.25rem !important;
+    max-height: 92vh !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
-  
-  /* Pasar grids de 2 columnas a 1 columna en móvil (formularios) */
+
+  /* === Paneles glass: reducir padding interno === */
+  .glass-panel {
+    padding: 1rem !important;
+  }
+
+  /* === Tipografía === */
+  h1, h2 {
+    letter-spacing: -0.01em;
+  }
+
+  .main-content h2 {
+    font-size: 1.6rem !important;
+  }
+
+  .main-content p {
+    font-size: 0.92rem !important;
+    line-height: 1.5;
+  }
+
+  /* === Botones: targets táctiles más grandes === */
+  .btn {
+    padding: 10px 14px;
+    font-size: 0.78rem;
+    min-height: 40px;
+  }
+
+  /* === Formularios: grids a 1 columna === */
   .form-grid {
     grid-template-columns: 1fr !important;
   }
 
-  /* Botones algo más compactos */
-  .btn {
-    padding: 8px 14px;
-    font-size: 0.75rem;
+  /* === Nav tabs: scroll horizontal si hay muchos === */
+  nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  nav button {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 10px 16px !important;
+    font-size: 0.8rem;
+  }
+
+  /* === Filtros: se apilan en columna === */
+  .filters-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* === Perfil: avatar más pequeño === */
+  .profile-header h1 {
+    font-size: 1.6rem !important;
   }
 }
+
+/* ── MÓVIL PEQUEÑO (≤ 480px) ── */
+@media (max-width: 480px) {
+  .main-content {
+    padding: 0.5rem;
+  }
+
+  header.glass-panel {
+    padding: 0.6rem 0.75rem !important;
+  }
+
+  header.glass-panel h1 {
+    font-size: 0.85rem !important;
+  }
+
+  .btn {
+    padding: 9px 11px;
+    font-size: 0.72rem;
+  }
+
+  /* Tarjetas de anuncio: imágenes más bajas */
+  .notice-image {
+    max-height: 160px;
+  }
+}
+
 

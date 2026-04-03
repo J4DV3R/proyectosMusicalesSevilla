@@ -131,9 +131,18 @@ export default function UserProfile() {
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
-                <h1 style={{ fontSize: '2.5rem', color: 'var(--text-primary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ backgroundColor: 'rgba(0,0,0,0.5)', padding: '12px', borderRadius: '50%', color: 'var(--neon-green)', display: 'flex' }}>
-                    <User size={32} />
+                <h1 style={{ fontSize: '2.5rem', color: 'var(--text-primary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <span style={{
+                    width: '72px', height: '72px', borderRadius: '50%',
+                    border: '2px solid var(--neon-green)', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    overflow: 'hidden', flexShrink: 0,
+                    backgroundColor: 'rgba(0,0,0,0.5)'
+                  }}>
+                    {profile.avatar_url
+                      ? <img src={profile.avatar_url} alt={profile.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <User size={36} color="var(--neon-green)" />
+                    }
                   </span>
                   {profile.username}
                 </h1>
