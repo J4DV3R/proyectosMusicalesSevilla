@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 const App = lazy(() => import('./App.jsx'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel.jsx'));
 const EditNotice = lazy(() => import('./pages/EditNotice.jsx'));
+const UserProfile = lazy(() => import('./pages/UserProfile.jsx'));
 import { CategoryProvider } from './context/CategoryContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import './index.css';
@@ -18,6 +19,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Routes>
               <Route path="/" element={<App />} />
               <Route path="/edit/:token" element={<EditNotice />} />
+              <Route path="/profile/:id" element={<UserProfile />} />
               <Route path="/admin" element={<AdminPanel />} />
             </Routes>
           </Suspense>
