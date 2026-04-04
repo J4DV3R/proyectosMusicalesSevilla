@@ -11,6 +11,13 @@ import { Plus, Search, Sun, Moon, Bookmark, Trash2, EyeOff, User, LogIn, LogOut 
 import { supabase, uploadImage } from './lib/supabase';
 import { useTheme } from './context/ThemeContext';
 
+// Constante fuera del componente para evitar recreación en cada render
+const TABS = [
+  { id: 'home',    label: 'Inicio' },
+  { id: 'ads',     label: 'Anuncios' },
+  { id: 'reports', label: 'Reportar' },
+];
+
 function App() {
   const [notices, setNotices] = useState([]);
   const [activeFilter, setActiveFilter] = useState('Todos');
@@ -79,8 +86,12 @@ function App() {
           return;
         }
 
-        // Usuario normal: cargar su perfil de la BD
-        const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+        // Usuario normal: cargar su perfil de la BD con columnas seguras
+        const { data } = await supabase
+          .from('profiles')
+          .select('id, username, bio, tags, social_links, avatar_url, created_at')
+          .eq('id', session.user.id)
+          .single();
         if (data) {
           setCurrentUser(data);
           setIsAdmin(false);
@@ -251,11 +262,6 @@ function App() {
   };
 
   // Pestañas disponibles: el admin ve todas, el público solo las activas
-  const TABS = [
-    { id: 'home',    label: 'Inicio' },
-    { id: 'ads',     label: 'Anuncios' },
-    { id: 'reports', label: 'Reportar' },
-  ];
   const visibleTabs = TABS.filter(t => isAdmin || tabVisibility[t.id]);
 
   // Si la pestaña activa queda oculta para el público, forzar la primera visible
@@ -504,12 +510,6 @@ function App() {
         </Suspense>
       )}
 
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
 
       {/* Botón flotante de tema */}
       <button
