@@ -77,24 +77,28 @@ export default function AdminPanel() {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) {
+    const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
+
+    const handleSession = (session) => {
+      // Verificar que quien accede sea exactamente el admin por email
+      if (session && ADMIN_EMAIL && session.user.email === ADMIN_EMAIL) {
+        setSession(session);
         fetchAllNotices();
         fetchTabSettings();
         fetchReports();
         fetchUsers();
+      } else if (session) {
+        // Usuario autenticado pero NO es el admin — expulsarlo
+        supabase.auth.signOut().then(() => {
+          window.location.href = '/';
+        });
+      } else {
+        setSession(null);
       }
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) {
-        fetchAllNotices();
-        fetchTabSettings();
-        fetchReports();
-        fetchUsers();
-      }
-    });
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => handleSession(session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => handleSession(session));
     return () => subscription.unsubscribe();
   }, []);
 

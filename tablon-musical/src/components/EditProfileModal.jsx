@@ -136,21 +136,37 @@ export default function EditProfileModal({ isOpen, onClose, userProfile, onProfi
 
     setLoading(true);
     try {
+      // Solo actualizamos columnas que sabemos que existen en profiles
+      const updatePayload = {
+        username: cleanUsername,
+        bio: cleanBio,
+        tags: formData.tags,
+        social_links: formData.social_links,
+        avatar_url: formData.avatar_url || null,
+      };
+
       const { error } = await supabase
         .from('profiles')
-        .update({
-          username: cleanUsername,
-          bio: cleanBio,
-          tags: formData.tags,
-          social_links: formData.social_links,
-          avatar_url: formData.avatar_url || null,
-          updated_at: new Date().toISOString()
-        })
+        .update(updatePayload)
         .eq('id', userProfile.id);
 
       if (error) {
-        if (error.code === '23505') throw new Error('Ese nombre de usuario ya está cogido. ¡Sé original!');
-        throw error;
+        // Si falla por columna inexistente (avatar_url, tags, social_links),
+        // reintentamos con solo los campos básicos
+        if (error.code === '42703' || error.message?.includes('column')) {
+          const basicPayload = { username: cleanUsername, bio: cleanBio };
+          const retry = await supabase
+            .from('profiles')
+            .update(basicPayload)
+            .eq('id', userProfile.id);
+          if (retry.error) {
+            if (retry.error.code === '23505') throw new Error('Ese nombre de usuario ya está cogido. ¡Sé original!');
+            throw retry.error;
+          }
+        } else {
+          if (error.code === '23505') throw new Error('Ese nombre de usuario ya está cogido. ¡Sé original!');
+          throw error;
+        }
       }
 
       onProfileUpdate({ ...userProfile, ...formData, username: cleanUsername, bio: cleanBio });

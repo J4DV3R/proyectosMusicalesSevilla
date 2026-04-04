@@ -195,7 +195,7 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
   // Vistas...
   if (successToken) {
     return (
-      <div className="modal-container" style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(4px)' }}>
+      <div className="modal-container">
         <div className="glass-panel modal-content" style={{ width: '100%', maxWidth: '500px', borderRadius: 'var(--border-radius-md)', padding: '2.5rem', textAlign: 'center', animation: 'fadeIn 0.3s ease' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🤘</div>
           <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--neon-green)' }}>¡ANUNCIO PUBLICADO!</h2>
@@ -228,9 +228,9 @@ export default function CreateNoticeModal({ isOpen, onClose, onSubmit }) {
   }
 
   return (
-    <div className="modal-container" style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}>
+    <div className="modal-container">
       
-      <div className="glass-panel modal-content" style={{ width: '100%', maxWidth: '600px', borderRadius: 'var(--border-radius-md)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.3s ease' }}>
+      <div className="glass-panel modal-content" style={{ width: '100%', maxWidth: '600px', borderRadius: 'var(--border-radius-md)', display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.3s ease' }}>
         
         {/* Header */}
         <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

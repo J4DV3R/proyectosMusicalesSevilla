@@ -44,28 +44,44 @@ export default function UserProfile() {
       
       // 1. Verificar si el usuario que ve la página es el dueño
       const { data: { session } } = await supabase.auth.getSession();
-      if (session && session.user.id === id) {
-        setIsOwner(true);
-      } else {
-        setIsOwner(false);
-      }
+      const owner = session && session.user.id === id;
+      setIsOwner(owner);
 
-      const { data: profileData, error: profileError } = await supabase
+      // 2. Cargar perfil — solo columnas base que sabemos que existen
+      let { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, username, bio, tags, social_links, avatar_url, created_at')
         .eq('id', id)
         .single();
 
-      if (profileError || !profileData) {
-        setLoading(false);
-        setErrorObj("No se encontró el perfil de usuario. Puede que sea una cuenta de sistema.");
-        return;
+      // Si falla por columnas inexistentes, reintentar con mínimo garantizado
+      if (profileError && profileError.code === '42703') {
+        const retry = await supabase
+          .from('profiles')
+          .select('id, username, bio, avatar_url')
+          .eq('id', id)
+          .single();
+        profileData = retry.data;
+        profileError = retry.error;
       }
-      
-      if (profileData.is_admin && !isOwner) {
-        setLoading(false);
-        setErrorObj("No se puede consultar el perfil de una cuenta de administración.");
-        return;
+
+      // Si no existe perfil aún (cuenta nueva sin trigger), crear fallback
+      if (!profileData) {
+        if (owner && session) {
+          // Cuenta nueva del propio usuario: mostrar perfil vacío editable
+          profileData = {
+            id: session.user.id,
+            username: session.user.email?.split('@')[0] || 'Usuario',
+            bio: '',
+            tags: [],
+            social_links: [],
+            avatar_url: null,
+          };
+        } else {
+          setLoading(false);
+          setErrorObj('No se encontró el perfil de usuario.');
+          return;
+        }
       }
 
       setProfile(profileData);

@@ -146,42 +146,35 @@ function App() {
     }
     alert("Anuncio eliminado definitivamente.");
     removeLocalToken(token);
-    const NOTICE_SELECT = 'id, title, description, tag, location, price, contact_type, contact_value, contacts, image_url, images, created_at, user_id';
+    // Refrescar con la misma query optimizada del fetch inicial
+    const BASE_SELECT = 'id, title, description, tag, location, price, contact_type, contact_value, contacts, image_url, images, created_at, user_id';
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
     const { data } = await supabase
       .from('notices')
-      .select(NOTICE_SELECT)
-      .order('created_at', { ascending: false });
-    if (data) {
-      const fourteenDaysAgo = new Date();
-      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-      setNotices(data.filter(n => new Date(n.created_at) > fourteenDaysAgo));
-    }
+      .select(BASE_SELECT)
+      .gte('created_at', fourteenDaysAgo.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (data) setNotices(data);
   };
 
-  // Fetch notices — query robusta: si el join con profiles falla por schema,
-  // vuelve a intentar sin el join
+  // Fetch notices — sin join a profiles para evitar errores de schema,
+  // con filtro de fecha en servidor y límite para máxima velocidad
   useEffect(() => {
     async function fetchNotices() {
       const BASE_SELECT = 'id, title, description, tag, location, price, contact_type, contact_value, contacts, image_url, images, created_at, user_id';
-      let { data, error } = await supabase
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+      const { data } = await supabase
         .from('notices')
-        .select(`${BASE_SELECT}, profiles(username)`)
-        .order('created_at', { ascending: false });
+        .select(BASE_SELECT)
+        .gte('created_at', fourteenDaysAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(200);
 
-      // Si falla por el join de profiles (schema not ready), reintentar sin join
-      if (error) {
-        const retry = await supabase
-          .from('notices')
-          .select(BASE_SELECT)
-          .order('created_at', { ascending: false });
-        data = retry.data;
-      }
-
-      if (data) {
-        const fourteenDaysAgo = new Date();
-        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-        setNotices(data.filter(n => new Date(n.created_at) > fourteenDaysAgo));
-      }
+      if (data) setNotices(data);
       setIsLoading(false);
     }
     fetchNotices();
@@ -213,9 +206,8 @@ function App() {
 
     const noticePayload = { ...formData, image_url: imagesUrls[0] || null, images: imagesUrls };
 
-    // Vincular con usuario si hay sesión activa y el perfil está cargado
-    // currentUser viene de 'profiles' (tiene 'username'), no de auth.user (tiene 'user_metadata')
-    if (currentUser && currentUser.username) {
+    // Vincular con usuario si hay sesión activa (por id, independientemente de si tiene perfil completo)
+    if (currentUser && currentUser.id) {
       noticePayload.user_id = currentUser.id;
     }
 
@@ -279,28 +271,35 @@ function App() {
       {/* Header */}
       <header className="glass-panel" style={{ padding: '1rem 2rem', position: 'sticky', top: 0, zIndex: 100, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         
-        {/* Espacio izquierdo para balancear si es necesario, o boton de login de móviles */}
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
-          {currentUser && !isAdmin ? (
-            <a href={`/profile/${currentUser.id}`} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px' }} title="Mi Perfil">
-              <User size={16} /> <span>{currentUser.username || 'Mi Perfil'}</span>
-            </a>
-          ) : !currentUser ? (
-            <button onClick={() => setIsAuthModalOpen(true)} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px' }}>
-              <LogIn size={16} /> <span className="hide-on-mobile">Registrarse / Entrar</span>
-            </button>
-          ) : (
-            <div style={{ color: 'var(--neon-pink)', fontSize: '0.8rem', fontWeight: 'bold', border: '1px solid var(--neon-pink)', padding: '4px 10px', borderRadius: '4px' }}>ZONA ADMIN</div>
-          )}
+        <div className="header-left" style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
+          {/* Symmetrical spacer for centering title */}
         </div>
 
-        <h1 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--neon-green)', flex: 1, justifyContent: 'center', whiteSpace: 'nowrap' }}>
+        <h1 className="header-title" style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--neon-green)', flex: 1, justifyContent: 'center', whiteSpace: 'nowrap' }}>
           SVQ_PROYECTOS_MUSICALES
         </h1>
 
-        {/* Espacio derecho: Salir si está logueado, o placeholder para centrar título */}
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px' }}>
-          {currentUser && (
+        <div className="header-right" style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px' }}>
+          {isAdmin && (
+            <div style={{ color: 'var(--neon-pink)', fontSize: '0.7rem', fontWeight: 'bold', border: '1px solid var(--neon-pink)', padding: '2px 8px', borderRadius: '4px', letterSpacing: '0.05em' }}>ADMIN</div>
+          )}
+          
+          {currentUser ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <a href={`/profile/${currentUser.id}`} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px' }} title="Mi Perfil">
+                <User size={16} /> <span className="hide-on-mobile">{currentUser.username || 'Perfil'}</span>
+              </a>
+              <button onClick={() => supabase.auth.signOut()} className="btn" style={{ padding: '8px', color: 'var(--neon-pink)', borderColor: 'var(--neon-pink)', background: 'transparent' }} title="Cerrar Sesión">
+                <LogOut size={16} />
+              </button>
+            </div>
+          ) : !isAdmin && (
+            <button onClick={() => setIsAuthModalOpen(true)} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px' }}>
+              <LogIn size={16} /> <span className="hide-on-mobile">Acceder</span>
+            </button>
+          )}
+
+          {isAdmin && !currentUser && (
             <button onClick={() => supabase.auth.signOut()} className="btn" style={{ padding: '8px', color: 'var(--neon-pink)', borderColor: 'var(--neon-pink)', background: 'transparent' }} title="Cerrar Sesión">
               <LogOut size={16} />
             </button>

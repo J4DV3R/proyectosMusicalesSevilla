@@ -59,24 +59,31 @@ export default function AuthModal({ isOpen, onClose }) {
           throw new Error("Esta cuenta es de administrador. Accede desde el panel /admin.");
         }
 
-        // Comprobar si la cuenta está bloqueada
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_blocked, blocked_until, block_reason')
-          .eq('id', authData.user.id)
-          .single();
+        // Comprobar si la cuenta está bloqueada (columnas opcionales — no fallar si no existen)
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('is_blocked, blocked_until, block_reason')
+            .eq('id', authData.user.id)
+            .single();
 
-        if (profile?.is_blocked) {
-          const now = new Date();
-          const blockedUntil = profile.blocked_until ? new Date(profile.blocked_until) : null;
-          if (!blockedUntil || blockedUntil > now) {
-            await supabase.auth.signOut();
-            const dateStr = blockedUntil
-              ? blockedUntil.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
-              : 'indefinidamente';
-            const reason = profile.block_reason ? ` Motivo: ${profile.block_reason}.` : '';
-            throw new Error(`Tu cuenta está bloqueada hasta el ${dateStr}.${reason}`);
+          if (profile?.is_blocked) {
+            const now = new Date();
+            const blockedUntil = profile.blocked_until ? new Date(profile.blocked_until) : null;
+            if (!blockedUntil || blockedUntil > now) {
+              await supabase.auth.signOut();
+              const dateStr = blockedUntil
+                ? blockedUntil.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+                : 'indefinidamente';
+              const reason = profile.block_reason ? ` Motivo: ${profile.block_reason}.` : '';
+              throw new Error(`Tu cuenta está bloqueada hasta el ${dateStr}.${reason}`);
+            }
           }
+        } catch (blockErr) {
+          // Si el error es el bloqueo que lanzamos nosotros, repropagarlo
+          if (blockErr.message?.includes('bloqueada')) throw blockErr;
+          // Si es un error de BD (columna inexistente), ignorarlo y dejar entrar
+          console.warn('No se pudo comprobar bloqueo:', blockErr.message);
         }
 
         onClose();
@@ -88,14 +95,28 @@ export default function AuthModal({ isOpen, onClose }) {
         const passwordError = validatePassword(password);
         if (passwordError) throw new Error(passwordError);
 
-        const { error } = await supabase.auth.signUp({
+        // Bloquear registro con el email de administrador
+        const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
+        if (ADMIN_EMAIL && email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+          throw new Error('Este correo electrónico no está disponible para registro.');
+        }
+
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: { data: { username: cleanUsername } }
         });
         if (error) throw error;
-        alert('¡Registro exitoso! Ya estás dentro.');
-        onClose();
+
+        // Si la confirmación de email está desactivada, la sesión ya es activa
+        if (signUpData.session) {
+          // Sesión inmediata (sin confirmación de email requerida)
+          onClose();
+        } else {
+          // Email de confirmación enviado
+          alert('¡Registro enviado! Revisa tu correo para confirmar la cuenta.');
+          onClose();
+        }
       }
     } catch (error) {
       setErrorMsg(traducirError(error.message));
@@ -105,7 +126,7 @@ export default function AuthModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="modal-container" style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(4px)' }}>
+    <div className="modal-container">
       
       <div className="glass-panel modal-content" style={{ width: '100%', maxWidth: '400px', borderRadius: 'var(--border-radius-md)', display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.3s ease', position: 'relative' }}>
         
