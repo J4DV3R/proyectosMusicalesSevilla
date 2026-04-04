@@ -110,13 +110,13 @@ export default function NoticeCard({ notice }) {
           {tag}
         </span>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          {user_id && profiles && profiles.username && (
+          {user_id && (
             <button 
               onClick={(e) => { e.stopPropagation(); navigate(`/profile/${user_id}`); }} 
               style={{ fontSize: '0.75rem', color: 'var(--neon-green)', display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
               title="Ver Perfil"
             >
-              <User size={12} /> {profiles.username}
+              <User size={12} /> {profiles?.username || 'Ver perfil'}
             </button>
           )}
           <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
@@ -155,13 +155,13 @@ export default function NoticeCard({ notice }) {
 
     {/* MODAL EXPANDIDO */}
     {isExpanded && (
-      <div className="modal-container" style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backgroundColor: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(8px)' }} onClick={() => setIsExpanded(false)}>
+      <div className="modal-container" onClick={() => setIsExpanded(false)}>
         
         {/* Evitamos que el clic dentro del modal lo cierre */}
         <div 
           className="glass-panel modal-content" 
           onClick={(e) => e.stopPropagation()} 
-          style={{ width: '100%', maxWidth: '700px', borderRadius: 'var(--border-radius-md)', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', position: 'relative', animation: 'fadeIn 0.2s ease' }}
+          style={{ width: '100%', maxWidth: '700px', borderRadius: 'var(--border-radius-md)', position: 'relative', animation: 'fadeIn 0.2s ease', overflowY: 'auto' }}
         >
           {/* Botón cerrar flotante */}
           <button onClick={() => setIsExpanded(false)} className="btn btn-secondary" style={{ position: 'absolute', top: '15px', right: '15px', zIndex: 10, padding: '8px', borderRadius: '50%', background: 'rgba(0,0,0,0.7)', border: 'none' }}>
@@ -205,13 +205,13 @@ export default function NoticeCard({ notice }) {
                 {tag}
               </span>
               <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                {user_id && profiles && profiles.username && (
+                {user_id && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); navigate(`/profile/${user_id}`); }} 
                     style={{ fontSize: '0.85rem', color: 'var(--neon-green)', display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                     title="Ver Perfil"
                   >
-                    <User size={14} /> @{profiles.username}
+                    <User size={14} /> {profiles?.username ? `@${profiles.username}` : 'Ver perfil'}
                   </button>
                 )}
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
