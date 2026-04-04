@@ -44,22 +44,22 @@ export default function HomePage({ onGoToAds }) {
       }}>
         {[
           {
-            icon: '📢',
-            title: '¿CÓMO FUNCIONA?',
+            icon: '⚡',
+            title: 'ANUNCIOS RÁPIDOS',
             color: 'var(--neon-green)',
-            text: 'Publica un anuncio gratis en segundos. Sin registro ni contraseñas: recibirás un enlace secreto para editar o borrar tu anuncio cuando quieras.'
+            text: 'Publica gratis en segundos. Usa el enlace secreto para editar sin registro o crea una cuenta para vincular anuncios a tu perfil.'
           },
           {
-            icon: '🔒',
-            title: 'SIN REGISTRO',
+            icon: '🎸',
+            title: 'TU PERFIL PÚBLICO',
             color: 'var(--neon-blue)',
-            text: 'No guardamos datos personales. Solo lo que tú decides publicar. Guarda tu enlace de edición en un lugar seguro.'
+            text: 'Crea tu ficha de artista con redes sociales, etiquetas y bio personalizada para que toda la escena sevillana te encuentre.'
           },
           {
-            icon: '⏳',
-            title: 'VIDA ÚTIL',
+            icon: '🛡️',
+            title: 'ESCENA SEGURA',
             color: 'var(--neon-pink)',
-            text: 'Los anuncios se archivan a los 14 días y se borran definitivamente a los 30. Así la escena se mantiene fresca y activa.'
+            text: 'Filtro inteligente de contenido y caducidad de 14 días para que el tablón siempre esté limpio, actualizado y libre de spam.'
           }
         ].map(card => (
           <div key={card.title} className="glass-panel" style={{
