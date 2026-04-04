@@ -196,7 +196,7 @@ export default function AdminPanel() {
     setSavingSettings(true);
     const { error } = await supabase
       .from('site_settings')
-      .update({ value: newVisibility, updated_at: new Date().toISOString() })
+      .update({ value: newVisibility })
       .eq('id', 'tabs_visibility');
     if (error) {
       alert('Error al guardar la configuración. ¿Está creada la tabla site_settings?');
